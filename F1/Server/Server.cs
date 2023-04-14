@@ -5,21 +5,20 @@ using ProtocolHelper;
 
 namespace Server;
 
-public class Server
+internal class Server
 {
     private static int maxClients = 10;
     
-    public static void Main()
+    static void Main()
     {
         // Set the IP address and port for the server
-        IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+        var ipAddress = IPAddress.Parse("127.0.0.1");
         int port = 20000;
 
         var socket = new Socket(
             ipAddress.AddressFamily,
             SocketType.Stream,
-            ProtocolType.Tcp
-        );
+            ProtocolType.Tcp);
 
         try
         {
@@ -61,26 +60,21 @@ public class Server
         {
             ISocketHandler handler = new SocketHandler(_socket);
             var clientConntected = true;
-            string? data = null;
+            
             while (clientConntected)
             {
                 try {
                     // Receive data from the client
-                    var bytes = new byte[Constants.FixedLength];
-                    int bytesRead = handler.Receive(bytes, Constants.FixedLength);
-                    data += Encoding.ASCII.GetString(bytes, 0, bytesRead);
-                    
-                    Console.WriteLine("Client said: {0}", data);
+                    var bytesLength = handler.Receive(Constants.FixedLength);
+                    var data = handler.Receive(BitConverter.ToInt32(bytesLength));
+
+                    Console.WriteLine("Client said: {0}", Encoding.UTF8.GetString(data));
                 }
                 catch (Exception e)
                 {
                     clientConntected = false;
                     Console.WriteLine("Exception: {0}", e);
                 }
-                finally {
-                    _socket.Shutdown(SocketShutdown.Both);
-                    _socket.Close();
-                }   
             }
         }
     }
