@@ -1,16 +1,21 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using F1;
+using log4net;
 using ProtocolHelper;
 
 namespace Client;
 
 internal class Client
 {
+    private static readonly SettingsHelper SettingsHelper = new();
+    private static readonly ILog Logger = LogManager.GetLogger(typeof(Client));
     static void Main()
     {
-        var ipAddress = IPAddress.Parse("127.0.0.1");
-        int serverPort = 20000;
+        var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ClientIpConfigKey));
+        var serverAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ServerIpConfigKey));;
+        int serverPort = int.Parse(SettingsHelper.ReadSettings(AppConfig.ServerPortConfigKey));;
         
         var client = new Socket(
             ipAddress.AddressFamily, 
@@ -20,10 +25,11 @@ internal class Client
         try
         {
             client.Bind(new IPEndPoint(ipAddress, 0));
-            client.Connect(new IPEndPoint(ipAddress, serverPort));
-            Console.Write("Connected to server");
-
-            var exit = false;
+            client.Connect(new IPEndPoint(serverAddress, serverPort));
+            
+            Console.Write($"Connected to server");
+            Logger.Info($"Connected to server on {serverAddress} port {serverPort}");
+            
             ISocketHandler handler = new SocketHandler(client);
             var message = "";
             
@@ -44,7 +50,7 @@ internal class Client
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.Error("Exception: {0}", e);
             client.Close();
         }
     }

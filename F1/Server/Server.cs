@@ -1,19 +1,27 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using F1;
+using log4net;
+using log4net.Config;
 using ProtocolHelper;
 
 namespace Server;
 
-internal class Server
+public class Server
 {
-    private static int maxClients = 10;
-    
+    private static readonly int MaxClients = 10;
+    private static readonly ILog Logger = LogManager.GetLogger(typeof(Server));
+    private static readonly SettingsHelper SettingsHelper = new();
+    static Server()
+    {
+        XmlConfigurator.Configure();
+    }
     static void Main()
     {
         // Set the IP address and port for the server
-        var ipAddress = IPAddress.Parse("127.0.0.1");
-        int port = 20000;
+        var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ServerIpConfigKey));
+        int port = int.Parse(SettingsHelper.ReadSettings(AppConfig.ServerPortConfigKey));
 
         var socket = new Socket(
             ipAddress.AddressFamily,
@@ -26,21 +34,27 @@ internal class Server
             socket.Bind(new IPEndPoint(ipAddress, port));
             
             // Start listening for incoming client requests
-            socket.Listen(maxClients);
-            Console.WriteLine("Server started. Waiting for connections...");
-
+            socket.Listen(MaxClients);
+            Console.WriteLine($"Server started in {ipAddress}:{port}. Waiting for connections...");
+            Logger.Info($"Server started in {ipAddress}:{port}.");
+            
             int connectedClients = 0;
-            while (connectedClients < maxClients)
+            while (connectedClients < MaxClients)
             {
                 var clientSocket = socket.Accept();
-                Console.Write("Client connected!");
+                
+                var clientRemoteEndpoint = clientSocket.RemoteEndPoint as IPEndPoint;
+                
+                Console.WriteLine($"Client {clientRemoteEndpoint.Address} connected on port {clientRemoteEndpoint.Port}");
+                Logger.Info($"Client with {clientRemoteEndpoint.Address} ip connected to server");
                 connectedClients += 1;
                 new Thread(() => new ClientHandler(clientSocket).Start()).Start();
             }
         }
         catch (Exception e)
         {
-            Console.WriteLine("Exception: {0}", e);
+            Logger.Error("Exception: {0}", e);
+            Console.Write("Client disconnected");
         }
         finally
         {
@@ -49,7 +63,7 @@ internal class Server
     }
     
     private class ClientHandler {
-        private Socket _socket;
+        private readonly Socket _socket;
 
         public ClientHandler(Socket client)
         {
@@ -59,9 +73,9 @@ internal class Server
         public void Start()
         {
             ISocketHandler handler = new SocketHandler(_socket);
-            var clientConntected = true;
+            var clientConnected = true;
             
-            while (clientConntected)
+            while (clientConnected)
             {
                 try {
                     // Receive data from the client
@@ -72,8 +86,9 @@ internal class Server
                 }
                 catch (Exception e)
                 {
-                    clientConntected = false;
-                    Console.WriteLine("Exception: {0}", e);
+                    clientConnected = false;
+                    Logger.Error("Exception:", e);
+                    Console.Write("Client disconnected");
                 }
             }
         }
