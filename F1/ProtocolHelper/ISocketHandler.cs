@@ -2,6 +2,6 @@ namespace ProtocolHelper;
 
 public interface ISocketHandler
 {
-    int Send(byte[] data, int length);
-    int Receive(byte[] data, int length);
+    void Send(byte[] data);
+    byte[] Receive(int length);
 }
