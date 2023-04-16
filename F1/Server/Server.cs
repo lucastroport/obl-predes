@@ -5,6 +5,7 @@ using F1;
 using log4net;
 using log4net.Config;
 using ProtocolHelper;
+using ProtocolHelper.Communication;
 
 namespace Server;
 
@@ -82,7 +83,11 @@ public class Server
                     var bytesLength = handler.Receive(Constants.FixedLength);
                     var data = handler.Receive(BitConverter.ToInt32(bytesLength));
 
-                    Console.WriteLine("Client said: {0}", Encoding.UTF8.GetString(data));
+                    var rawResponse = Encoding.UTF8.GetString(data);
+                    var deserializedResponse = ProtocolSerializer.Deserialize(rawResponse);
+                    
+                    Console.WriteLine("Client said: ");
+                    Console.WriteLine(deserializedResponse);
                 }
                 catch (Exception e)
                 {
