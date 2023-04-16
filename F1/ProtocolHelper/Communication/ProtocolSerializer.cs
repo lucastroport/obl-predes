@@ -25,7 +25,7 @@ public static class ProtocolSerializer
                 case "op":
                     protocolData.Operation = int.Parse(keyValue[1]);
                     break;
-                default://query=user123&PW=123456
+                default:
                     protocolData.Query = QueryDataSerializer.Deserialize(RemoveFirstOccurrence(field,"query="));
                     break;
             }

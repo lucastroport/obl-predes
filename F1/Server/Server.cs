@@ -75,19 +75,51 @@ public class Server
         {
             ISocketHandler handler = new SocketHandler(_socket);
             var clientConnected = true;
-            
+
             while (clientConnected)
             {
-                try {
-                    // Receive data from the client
-                    var bytesLength = handler.Receive(Constants.FixedLength);
-                    var data = handler.Receive(BitConverter.ToInt32(bytesLength));
-
-                    var rawResponse = Encoding.UTF8.GetString(data);
-                    var deserializedResponse = ProtocolSerializer.Deserialize(rawResponse);
+                try
+                {
+                    var protocolData = new ProtocolData();
+                    string logMessage;
                     
-                    Console.WriteLine("Client said: ");
-                    Console.WriteLine(deserializedResponse);
+                    // Receive the header from the client
+                    var headerLength = ByteConvertUtils.MessageByteLength(Constants.RequestHeader);
+                    var bytesLength = handler.Receive(headerLength);
+                    var header = handler.Receive(BitConverter.ToInt32(bytesLength));
+                    var parsedHeader = ParseClientResponse(header);
+                    protocolData.Header = parsedHeader;
+                    logMessage = $"Header received: {parsedHeader}";
+                    Console.WriteLine(logMessage);
+                    Logger.Info(logMessage);
+
+                    // Receive the operation from the client
+                    var operationLength = ByteConvertUtils.MessageByteLength(Constants.Operation);
+                    bytesLength = handler.Receive(operationLength);
+                    var operation = handler.Receive(BitConverter.ToInt32(bytesLength));
+                    var parsedOperation = int.Parse(ParseClientResponse(operation));
+                    protocolData.Operation = parsedOperation;
+                    logMessage = $"Operation received: {parsedOperation}";
+                    Console.WriteLine(logMessage);
+                    Logger.Info(logMessage);
+
+                    // Receive the query from the client
+                    bytesLength = handler.Receive(Constants.FixedLength);
+                    var query = handler.Receive(BitConverter.ToInt32(bytesLength));
+                    var parsedQuery = ParseClientResponse(query);
+                    protocolData.Query = QueryDataSerializer.Deserialize(parsedQuery);
+                    logMessage = $"Query received: {parsedQuery}";
+                    Console.WriteLine(logMessage);
+                    Logger.Info(logMessage);
+
+                    // Acknowledge each field to the client
+                    SendAck(handler, Constants.ResponseHeader);
+                    SendAck(handler, Constants.OperationReceived);
+                    SendAck(handler, Constants.QueryReceived);
+
+                    // Process the data and generate a response
+                    var response = "Data received and processed successfully";
+                    SendAck(handler, protocolData.ToString());
                 }
                 catch (Exception e)
                 {
@@ -97,5 +129,20 @@ public class Server
                 }
             }
         }
+        private static string ParseClientResponse(byte[] data)
+        {
+            return Encoding.UTF8.GetString(data);
+        }
+
+        private static void SendAck(ISocketHandler handler, string ack)
+        {
+            byte[] responseBytes = Encoding.ASCII.GetBytes(ack);
+            byte[] responseLengthBytes = BitConverter.GetBytes(responseBytes.Length);
+            handler.Send(responseLengthBytes);
+
+            // Send the response to the client
+            handler.Send(responseBytes);
+        }
+        
     }
 }
