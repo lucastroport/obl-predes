@@ -82,13 +82,6 @@ public class Server
             var protocolProcessor = new ProtocolProcessor(handler);
             var clientConnected = true;
             
-            // When client connected send main menu to client
-            // ProcessData(protocolProcessor, new ProtocolData(
-            //     true,
-            //     $"{MenuItemConstants.MainMenu}",
-            //     null
-            // ));
-            
             while (clientConnected)
             {
                 try

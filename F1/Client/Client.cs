@@ -83,6 +83,7 @@ internal class Client
                 }
                 else
                 {
+                    // We ask the client for fields to complete and send the server
                     foreach (KeyValuePair<string, string> pair in response.Query.Fields) {
                         Console.WriteLine("Key: {0}, Value: {1}", pair.Key, pair.Value);
                     }   
