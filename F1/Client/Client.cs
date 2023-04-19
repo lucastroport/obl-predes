@@ -3,9 +3,9 @@ using System.Net.Sockets;
 using System.Text;
 using F1;
 using log4net;
-using Microsoft.VisualBasic;
 using ProtocolHelper;
 using ProtocolHelper.Communication;
+using ProtocolHelper.Communication.Models;
 using Constants = F1.Constants;
 
 namespace Client;
@@ -29,40 +29,64 @@ internal class Client
         {
             client.Bind(new IPEndPoint(ipAddress, 0));
             client.Connect(new IPEndPoint(serverAddress, serverPort));
-            
-            Console.Write($"Connected to server");
+
+            Console.WriteLine($"Connected to server");
             Logger.Info($"Connected to server on {serverAddress} port {serverPort}");
-            
-            var message = "";
-            
-            ProtocolData testData = new ProtocolData
+            ISocketHandler handler = new SocketHandler(client);
+
+            var protocolData = new ProtocolData(
+                true,
+                $"{Constants.MenuItemConstants.MainMenu}",
+                null
+            );
+            var serializedQuery = QueryDataSerializer.Serialize(protocolData.Query);
+            SendPacket(handler, 
+                $"{protocolData.Header}" +
+                $"{protocolData.Operation}" +
+                $"{protocolData.QueryLength}" +
+                $"{serializedQuery}"
+            );
+            string message="";
+            var protocolProcessor = new ProtocolProcessor(handler);
+            var response = protocolProcessor.Process();
+            var menu = "";
+            var isMenu = response.Query != null && response.Query.Fields.TryGetValue("MENU", out menu);
+            if (isMenu)
             {
-                Header = "REQ",
-                Operation = 1,
-                Query = new QueryData
-                {
-                    Fields = new Dictionary<string, string>
-                    {
-                        {"user", "pepe123"},
-                        {"PW", "123456"}
-                    }
-                }
-            };
+                Console.WriteLine(menu);
+            }
             
-            while (!message.Equals("exit"))
+            while (!message.Equals($"{Constants.MenuItemConstants.ExitMenu}"))
             {
-                ISocketHandler handler = new SocketHandler(client);
-                
                 message = Console.ReadLine();
-                SendPacket(handler, testData.Header);
-                SendPacket(handler, testData.Operation.ToString());
-                SendPacket(handler, QueryDataSerializer.Serialize(testData.Query));
+                
+                protocolData = new ProtocolData(
+                    true,
+                    message,
+                    null
+                );
+                serializedQuery = QueryDataSerializer.Serialize(protocolData.Query);
+                
+                SendPacket(handler, 
+                    $"{protocolData.Header}" +
+                    $"{protocolData.Operation}" +
+                    $"{protocolData.QueryLength}" +
+                    $"{serializedQuery}"
+                );
                 
                 // Receive and print the server response
-                ReceiveAck(handler, Constants.FixedLength);
-                ReceiveAck(handler, Constants.FixedLength);
-                ReceiveAck(handler, Constants.FixedLength);
-                ReceiveAck(handler, Constants.FixedLength);
+                response = protocolProcessor.Process();
+                if (response.Query != null) isMenu = response.Query.Fields.TryGetValue("MENU", out menu);
+                if (isMenu)
+                {
+                    Console.WriteLine(menu);
+                }
+                else
+                {
+                    foreach (KeyValuePair<string, string> pair in response.Query.Fields) {
+                        Console.WriteLine("Key: {0}, Value: {1}", pair.Key, pair.Value);
+                    }   
+                }
             }
         }
         catch (Exception e)
@@ -87,7 +111,9 @@ internal class Client
     {
         var bytesLength = handler.Receive(expectedLength);
         var query = handler.Receive(BitConverter.ToInt32(bytesLength));
-        Console.WriteLine("Received: " + ParseServerResponse(query));
+        var parsed = ParseServerResponse(query);
+        Console.WriteLine(parsed);
+        Logger.Info(parsed);
     }
     
     private static string ParseServerResponse(byte[] data)

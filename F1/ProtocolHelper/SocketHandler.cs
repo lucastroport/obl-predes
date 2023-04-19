@@ -28,18 +28,18 @@ public class SocketHandler : ISocketHandler
         }
     }
 
-    public byte[] Receive(int length)
+    public byte[] Receive(int length, int receivedLength = 0)
     {
-        int bytesRead = 0;
+        var offSet = receivedLength;
         byte[] buffer = new byte[length];
-        while (bytesRead < length) {
-            int bytesToRead = length - bytesRead;
-            var bytesReceived = _socket.Receive(buffer, bytesRead, bytesToRead, SocketFlags.None);
+        while (offSet < length) {
+            int bytesToRead = length - offSet;
+            var bytesReceived = _socket.Receive(buffer, offSet, bytesToRead, SocketFlags.None);
             if (bytesReceived == 0)
             {
                 throw new SocketException();
             }
-            bytesRead += bytesReceived;
+            offSet += bytesReceived;
         }
         return buffer;
     }

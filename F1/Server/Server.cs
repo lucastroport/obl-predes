@@ -2,10 +2,15 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using F1;
+using F1.Constants;
+using F1.Presentation.Views.Menu;
 using log4net;
 using log4net.Config;
 using ProtocolHelper;
 using ProtocolHelper.Communication;
+using ProtocolHelper.Communication.Models;
+using Server.Commands;
+using Server.Handlers;
 
 namespace Server;
 
@@ -73,53 +78,24 @@ public class Server
 
         public void Start()
         {
-            ISocketHandler handler = new SocketHandler(_socket);
+            var handler = new SocketHandler(_socket);
+            var protocolProcessor = new ProtocolProcessor(handler);
             var clientConnected = true;
-
+            
+            // When client connected send main menu to client
+            // ProcessData(protocolProcessor, new ProtocolData(
+            //     true,
+            //     $"{MenuItemConstants.MainMenu}",
+            //     null
+            // ));
+            
             while (clientConnected)
             {
                 try
                 {
-                    var protocolData = new ProtocolData();
-                    string logMessage;
-                    
-                    // Receive the header from the client
-                    var headerLength = ByteConvertUtils.MessageByteLength(Constants.RequestHeader);
-                    var bytesLength = handler.Receive(headerLength);
-                    var header = handler.Receive(BitConverter.ToInt32(bytesLength));
-                    var parsedHeader = ParseClientResponse(header);
-                    protocolData.Header = parsedHeader;
-                    logMessage = $"Header received: {parsedHeader}";
-                    Console.WriteLine(logMessage);
-                    Logger.Info(logMessage);
-
-                    // Receive the operation from the client
-                    var operationLength = ByteConvertUtils.MessageByteLength(Constants.Operation);
-                    bytesLength = handler.Receive(operationLength);
-                    var operation = handler.Receive(BitConverter.ToInt32(bytesLength));
-                    var parsedOperation = int.Parse(ParseClientResponse(operation));
-                    protocolData.Operation = parsedOperation;
-                    logMessage = $"Operation received: {parsedOperation}";
-                    Console.WriteLine(logMessage);
-                    Logger.Info(logMessage);
-
-                    // Receive the query from the client
-                    bytesLength = handler.Receive(Constants.FixedLength);
-                    var query = handler.Receive(BitConverter.ToInt32(bytesLength));
-                    var parsedQuery = ParseClientResponse(query);
-                    protocolData.Query = QueryDataSerializer.Deserialize(parsedQuery);
-                    logMessage = $"Query received: {parsedQuery}";
-                    Console.WriteLine(logMessage);
-                    Logger.Info(logMessage);
-
-                    // Acknowledge each field to the client
-                    SendAck(handler, Constants.ResponseHeader);
-                    SendAck(handler, Constants.OperationReceived);
-                    SendAck(handler, Constants.QueryReceived);
-
+                    var protocolData = protocolProcessor.Process();
                     // Process the data and generate a response
-                    var response = "Data received and processed successfully";
-                    SendAck(handler, protocolData.ToString());
+                    ProcessData(protocolProcessor, protocolData);
                 }
                 catch (Exception e)
                 {
@@ -129,20 +105,26 @@ public class Server
                 }
             }
         }
-        private static string ParseClientResponse(byte[] data)
-        {
-            return Encoding.UTF8.GetString(data);
-        }
-
-        private static void SendAck(ISocketHandler handler, string ack)
-        {
-            byte[] responseBytes = Encoding.ASCII.GetBytes(ack);
-            byte[] responseLengthBytes = BitConverter.GetBytes(responseBytes.Length);
-            handler.Send(responseLengthBytes);
-
-            // Send the response to the client
-            handler.Send(responseBytes);
-        }
         
+
+        private static void ProcessData(ProtocolProcessor processor, ProtocolData data)
+        {
+            var menu = new Menu();
+            var operationHandler = new OperationHandler();
+            menu.TriggerNotAuthMenu();
+            
+            var response = operationHandler
+                .HandleMenuAction(
+                    int.Parse(data.Operation), 
+                    data.Query != null ? new CommandQuery(data.Query.Fields) : null,
+                    menu
+                );
+
+            var ack = $"{response.Header}" +
+                      $"{response.Operation}" +
+                      response.QueryLength +
+                      $"{QueryDataSerializer.Serialize(response.Query)}";
+            processor.SendAck(ack);
+        }
     }
 }
