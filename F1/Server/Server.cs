@@ -19,9 +19,11 @@ public class Server
     private static readonly int MaxClients = 10;
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Server));
     private static readonly SettingsHelper SettingsHelper = new();
+    private static List<Socket> _connectedClients;
     static Server()
     {
         XmlConfigurator.Configure();
+        _connectedClients = new List<Socket>();
     }
     static void Main()
     {
@@ -44,27 +46,28 @@ public class Server
             Console.WriteLine($"Server started in {ipAddress}:{port}. Waiting for connections...");
             Logger.Info($"Server started in {ipAddress}:{port}.");
             
-            int connectedClients = 0;
-            while (connectedClients < MaxClients)
+            while (_connectedClients.Count < MaxClients)
             {
                 var clientSocket = socket.Accept();
+                _connectedClients.Add(clientSocket);
                 
                 var clientRemoteEndpoint = clientSocket.RemoteEndPoint as IPEndPoint;
                 
                 Console.WriteLine($"Client {clientRemoteEndpoint.Address} connected on port {clientRemoteEndpoint.Port}");
                 Logger.Info($"Client with {clientRemoteEndpoint.Address} ip connected to server");
-                connectedClients += 1;
                 new Thread(() => new ClientHandler(clientSocket).Start()).Start();
             }
         }
         catch (Exception e)
         {
             Logger.Error("Exception: {0}", e);
-            Console.Write("Client disconnected");
+            Console.WriteLine("Client disconnected");
         }
         finally
         {
+            socket.Shutdown(SocketShutdown.Both);
             socket.Close();
+            Logger.Info("Socket closed");
         }
     }
     
@@ -94,7 +97,7 @@ public class Server
                 {
                     clientConnected = false;
                     Logger.Error("Exception:", e);
-                    Console.Write("Client disconnected");
+                    Console.WriteLine("Client disconnected");
                 }
             }
         }

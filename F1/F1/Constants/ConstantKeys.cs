@@ -11,4 +11,6 @@ public class ConstantKeys
     public static readonly string QueryLengthReceived = "Query Length received";
     public static readonly string QueryReceived = "Query Received";
     public static readonly string ResponseHeader = "RES";
+    public static readonly string AuthUnlocked = "AuthUnlocked";
+    public static readonly string AuthLocked = "AuthLocked";
 }

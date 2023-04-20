@@ -1,29 +1,45 @@
 using F1.Domain.Model;
 
-namespace F1.Domain.Repository;
-
-public class UserRepository : IUserRepository
+namespace F1.Domain.Repository
 {
-    private IList<User> _users;
+    public class UserRepository : IUserRepository
+    {
+        private IList<User> _users;
+        private static UserRepository _instance;
 
-    public UserRepository()
-    {
-        _users = new List<User>();
-    }
-    
-    public void AddUser(User u)
-    {
-        u.Id = $"{_users.Count+1}";
-        _users.Add(u);
-    }
+        private UserRepository()
+        {
+            _users = new List<User>();
+            _users.Add(new User("admin","admin"));
+        }
 
-    public void RemoveUser(User u)
-    {
-        _users.Remove(u);
-    }
+        public static UserRepository Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = new UserRepository();
+                }
+                return _instance;
+            }
+        }
 
-    public User? QueryById(string id)
-    {
-        return _users.FirstOrDefault(user => user.Id == id);
+        public void AddUser(User u)
+        {
+            u.Id = $"{_users.Count+1}";
+            _users.Add(u);
+        }
+
+        public void RemoveUser(User u)
+        {
+            _users.Remove(u);
+        }
+
+        public User? QueryByUsername(string username)
+        {
+            return _users.FirstOrDefault(user => user.Username == username);
+        }
+        
     }
 }
