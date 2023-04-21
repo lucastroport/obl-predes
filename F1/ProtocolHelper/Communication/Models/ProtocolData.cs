@@ -9,7 +9,7 @@ public class ProtocolData
     public const int QueryMaxLength = 4;
     public string Header { get; }
     public string Operation { get; }
-    public QueryData? Query { get; }
+    public QueryData? Query { get; set; }
     public string QueryLength { get; }
 
     public ProtocolData(bool isReq, string operation, QueryData? query)

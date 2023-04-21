@@ -6,5 +6,5 @@ public interface IUserRepository
 {
     void AddUser(User u);
     void RemoveUser(User u);
-    User? QueryById(string id);
+    User? QueryByUsername(string username);
 }

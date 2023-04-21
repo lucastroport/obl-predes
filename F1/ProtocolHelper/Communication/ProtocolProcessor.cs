@@ -6,7 +6,7 @@ namespace ProtocolHelper.Communication;
 
 public class ProtocolProcessor
 {
-    private static ISocketHandler _handler;
+    private ISocketHandler _handler;
     
     public ProtocolProcessor(ISocketHandler handler)
     {

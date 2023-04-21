@@ -8,11 +8,11 @@ public class User
     public UserType Type { get; set; }
     public bool IsLoggedIn { get; set; }
 
-    public User(string username, string password)
+    public User(string username, string password, UserType userType = UserType.Mechanic)
     {
         Username = username;
         Password = password;
-        Type = UserType.Mechanic;
+        Type = userType;
         IsLoggedIn = false;
     }
 

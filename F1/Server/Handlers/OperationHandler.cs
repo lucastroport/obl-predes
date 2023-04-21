@@ -14,7 +14,8 @@ public class OperationHandler
             commandMap = new Dictionary<int, ICommand>
             {
                 { MenuItemConstants.LogIn, new LoginCommand() },
-                // { MenuItemConstants.AddUser, new AddUserCommand() },
+                { MenuItemConstants.AddUser, new AddUserCommand() },
+                { MenuItemConstants.LogOut, new LogOutCommand() },
                 // { MenuItemConstants.AddPart, new AddPartCommand() },
                 // { MenuItemConstants.AddPartCategory, new AddPartCategoryCommand() },
                 // { MenuItemConstants.AssociateCategoryToPart, new AssociateCategoryToPartCommand() },
@@ -42,14 +43,15 @@ public class OperationHandler
                     }
                 );
             }
-            return HandleCommand(operation, query);
+            return HandleCommand(operation, query, menu);
         }
 
-        private ProtocolData HandleCommand(int operation, CommandQuery? query)
+        private ProtocolData HandleCommand(int operation, CommandQuery? query, Menu menu)
         {
             if (commandMap.TryGetValue(operation, out ICommand command))
             {
-                var result = command.Execute(query);
+                var result = command.Execute(query, menu);
+                
                 return new ProtocolData(
                     false,
                     $"{operation}",
@@ -64,7 +66,7 @@ public class OperationHandler
                 $"{operation}",
                 new QueryData
                 {
-                    Fields = new Dictionary<string, string>{ {"ERROR",$"Invalid operation {operation}"} }
+                    Fields = new Dictionary<string, string>{ {"RESULT",$"Invalid operation {operation}"} }
                 }
             );
         }
