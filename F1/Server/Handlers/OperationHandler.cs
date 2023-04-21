@@ -14,7 +14,8 @@ public class OperationHandler
             commandMap = new Dictionary<int, ICommand>
             {
                 { MenuItemConstants.LogIn, new LoginCommand() },
-                // { MenuItemConstants.AddUser, new AddUserCommand() },
+                { MenuItemConstants.AddUser, new AddUserCommand() },
+                { MenuItemConstants.LogOut, new LogOutCommand() },
                 // { MenuItemConstants.AddPart, new AddPartCommand() },
                 // { MenuItemConstants.AddPartCategory, new AddPartCategoryCommand() },
                 // { MenuItemConstants.AssociateCategoryToPart, new AssociateCategoryToPartCommand() },

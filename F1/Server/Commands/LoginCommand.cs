@@ -40,7 +40,8 @@ public class LoginCommand : ICommand
             new Dictionary<string, string>
             {
                 {"RESULT", $"{resultMessage}"},
-                {"MENU", $"{menu}"}
+                {"MENU", $"{menu}"},
+                {"AUTHENTICATED", $"{foundUser.Username}"}
             }
             );
         return new CommandResult(cmdQuery);

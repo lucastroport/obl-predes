@@ -94,11 +94,11 @@ internal class Client
                 }
                 // Receive and print the server response
                 response = protocolProcessor.Process();
-                waitingResponse = false;
 
                 var result = "";
                 if (response.Query != null) isMenu = response.Query.Fields.TryGetValue("MENU", out menu);
                 var containsResult = response.Query != null && response.Query.Fields.TryGetValue("RESULT", out result);
+
                 if (isMenu || containsResult)
                 {
                     if (containsResult)

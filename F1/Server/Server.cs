@@ -19,11 +19,11 @@ public class Server
     private static readonly int MaxClients = 10;
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Server));
     private static readonly SettingsHelper SettingsHelper = new();
-    private static List<Socket> _connectedClients;
+    private static Dictionary<Socket, string> _connectedClients = new ();
+    private static Socket _clientSocket;
     static Server()
     {
         XmlConfigurator.Configure();
-        _connectedClients = new List<Socket>();
     }
     static void Main()
     {
@@ -35,7 +35,7 @@ public class Server
             ipAddress.AddressFamily,
             SocketType.Stream,
             ProtocolType.Tcp);
-
+            
         try
         {
             // Bind the listener to the IP address and port
@@ -48,14 +48,14 @@ public class Server
             
             while (_connectedClients.Count < MaxClients)
             {
-                var clientSocket = socket.Accept();
-                _connectedClients.Add(clientSocket);
+                _clientSocket = socket.Accept();
+                _connectedClients.Add(_clientSocket,"");
                 
-                var clientRemoteEndpoint = clientSocket.RemoteEndPoint as IPEndPoint;
+                var clientRemoteEndpoint = _clientSocket.RemoteEndPoint as IPEndPoint;
                 
                 Console.WriteLine($"Client {clientRemoteEndpoint.Address} connected on port {clientRemoteEndpoint.Port}");
                 Logger.Info($"Client with {clientRemoteEndpoint.Address} ip connected to server");
-                new Thread(() => new ClientHandler(clientSocket).Start()).Start();
+                new Thread(() => new ClientHandler(_clientSocket).Start()).Start();
             }
         }
         catch (Exception e)
@@ -102,12 +102,24 @@ public class Server
             }
         }
         
-
         private static void ProcessData(ProtocolProcessor processor, ProtocolData data)
         {
             var menu = new Menu();
             var operationHandler = new OperationHandler();
-            menu.TriggerNotAuthMenu();
+
+            if (IsClientAuthenticated())
+            {
+                menu.TriggerLoggedInMenu();
+                if (data.Query != null)
+                {
+                    var loggedUser = _connectedClients[_clientSocket];
+                    data.Query.Fields.Add(ConstantKeys.Authenticated, loggedUser);    
+                }
+            }
+            else
+            {
+                menu.TriggerNotAuthMenu();
+            }
             
             var response = operationHandler
                 .HandleMenuAction(
@@ -115,12 +127,39 @@ public class Server
                     data.Query != null ? new CommandQuery(data.Query.Fields) : null,
                     menu
                 );
-
+            var userAuthenticated = response.Query.Fields.TryGetValue(ConstantKeys.Authenticated, out var username);
+            var isLogout = response.Query.Fields.ContainsKey(ConstantKeys.Logout);
+            
+            if (isLogout)
+            {
+                if (_connectedClients.ContainsKey(_clientSocket))
+                {
+                    _connectedClients.Remove(_clientSocket);
+                }
+            }
+            if (userAuthenticated)
+            {
+                if (_connectedClients.ContainsKey(_clientSocket))
+                {
+                    _connectedClients[_clientSocket] = username;
+                }
+                else
+                {
+                    _connectedClients.Add(_clientSocket,username);
+                }
+            }
+            
             var ack = $"{response.Header}" +
                       $"{response.Operation}" +
                       response.QueryLength +
                       $"{QueryDataSerializer.Serialize(response.Query)}";
             processor.SendAck(ack);
         }
+    }
+
+    private static bool IsClientAuthenticated()
+    {
+        var containsClient = _connectedClients.TryGetValue(_clientSocket, out var username);
+        return containsClient && !string.IsNullOrEmpty(username);
     }
 }

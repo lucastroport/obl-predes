@@ -16,4 +16,5 @@ public static class MenuItemConstants
     public const int SearchPartByName = 11;
     public const int Chat = 12;
     public const int History = 13;
+    public const int LogOut = 14;
 }

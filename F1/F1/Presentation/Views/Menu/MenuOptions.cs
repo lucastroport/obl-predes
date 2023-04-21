@@ -25,7 +25,8 @@ namespace F1.Presentation.Views.Menu
             new(MenuItemConstants.SearchPartByName, "Search part by name", new[] { UserType.Admin, UserType.Mechanic },
                 true),
             new(MenuItemConstants.Chat, "Chat", new[] { UserType.Admin, UserType.Mechanic }),
-            new(MenuItemConstants.History, "History", new[] { UserType.Admin, UserType.Mechanic }, true)
+            new(MenuItemConstants.History, "History", new[] { UserType.Admin, UserType.Mechanic }, true),
+            new(MenuItemConstants.LogOut, "Exit/LogOut", new[] { UserType.Admin, UserType.Mechanic }, true)
         };
 
         public static List<MenuItem> PartMenuItems = new()
