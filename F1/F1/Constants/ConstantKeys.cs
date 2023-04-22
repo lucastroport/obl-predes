@@ -15,4 +15,8 @@ public class ConstantKeys
     public static readonly string AuthLocked = "AuthLocked";
     public static readonly string Authenticated = "AUTHENTICATED";
     public static readonly string Logout = "LOGOUT";
+
+    public static readonly string PartNameKey = "Part Name:";
+    public static readonly string PartSupplierKey = "Supplier:";
+    public static readonly string PartBrandKey = "Brand:";
 }

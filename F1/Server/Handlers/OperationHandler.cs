@@ -16,6 +16,8 @@ public class OperationHandler
                 { MenuItemConstants.LogIn, new LoginCommand() },
                 { MenuItemConstants.AddUser, new AddUserCommand() },
                 { MenuItemConstants.LogOut, new LogOutCommand() },
+                { MenuItemConstants.AddPart, new AddPartCommand() },
+                { MenuItemConstants.Parts, new PartsCommand() },
                 // { MenuItemConstants.AddPart, new AddPartCommand() },
                 // { MenuItemConstants.AddPartCategory, new AddPartCategoryCommand() },
                 // { MenuItemConstants.AssociateCategoryToPart, new AssociateCategoryToPartCommand() },

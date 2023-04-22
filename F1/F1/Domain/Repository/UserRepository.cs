@@ -12,7 +12,6 @@ namespace F1.Domain.Repository
             _users = new List<User>();
             _users.Add(new User("admin","admin", UserType.Admin));
         }
-
         public static UserRepository Instance
         {
             get

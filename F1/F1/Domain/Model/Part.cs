@@ -10,10 +10,11 @@ public class Part
     public string? PhotoUrl { get; set; }
     public IList<PartCategory>? Categories { get; set; }
 
-    public Part(string id, string name)
+    public Part(string name, string supplier, string brand)
     {
-        Id = id;
         Name = name;
+        Supplier = supplier;
+        Brand = brand;
     }
     protected bool Equals(Part other)
     {
