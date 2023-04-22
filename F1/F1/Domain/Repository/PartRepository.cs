@@ -8,7 +8,7 @@ namespace F1.Domain.Repository
     public sealed class PartRepository : IPartRepository
     {
         private static PartRepository _instance;
-        private IList<Part> _parts;
+        private List<Part> _parts;
 
         private PartRepository()
         {
@@ -48,9 +48,11 @@ namespace F1.Domain.Repository
             return _parts.FirstOrDefault(p => p.Id == id);
         }
 
-        public IList<Part> QueryItemsByName(string name)
+        public List<Part> QueryItemsByName(string name)
         {
             return _parts.TakeWhile(p => p.Name.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
         }
+
+        public List<Part> GetAllParts() => _parts;
     }
 }

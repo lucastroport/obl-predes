@@ -13,12 +13,11 @@ public class AddPartCommand : ICommand
         CommandQuery? cmdQuery;
         if (query == null)
         {
-            cmdQuery = new CommandQuery(new Dictionary<string, string>());
-            cmdQuery.PopulateQuery(new List<string>
+            cmdQuery = new CommandQuery(new Dictionary<string, string>
             {
-                ConstantKeys.PartNameKey,
-                ConstantKeys.PartSupplierKey,
-                ConstantKeys.PartBrandKey
+                {ConstantKeys.PartNameKey, "Enter"},
+                {ConstantKeys.PartSupplierKey, "Enter"},
+                {ConstantKeys.PartBrandKey, "Enter"}
             });
             
             return new CommandResult(cmdQuery);

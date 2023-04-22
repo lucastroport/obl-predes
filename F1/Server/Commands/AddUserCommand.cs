@@ -14,14 +14,16 @@ public class AddUserCommand : ICommand
         CommandQuery? cmdQuery;
         if (query == null)
         {
-            cmdQuery = new CommandQuery(new Dictionary<string, string>());
-            cmdQuery.PopulateQuery(new List<string>{"user","password"});
-            
+            cmdQuery = new CommandQuery(new Dictionary<string, string>
+            {
+                {ConstantKeys.UsernameKey, "Enter"},
+                {ConstantKeys.PasswordKey, "Enter"}
+            });
             return new CommandResult(cmdQuery);
         }
         _userRepository = UserRepository.Instance;
-        query.Fields.TryGetValue("user", out var username);
-        query.Fields.TryGetValue("password", out var password);
+        query.Fields.TryGetValue(ConstantKeys.UsernameKey, out var username);
+        query.Fields.TryGetValue(ConstantKeys.PasswordKey, out var password);
         query.Fields.TryGetValue(ConstantKeys.Authenticated, out var authUsername);
 
         var authenticatedUser = _userRepository.QueryByUsername(authUsername);

@@ -120,16 +120,16 @@ internal class Client
                     {
                         while (string.IsNullOrEmpty(input))
                         {
-                            Console.WriteLine($"{pair.Key} Enter {pair.Value}");
+                            Console.WriteLine($"{pair.Value} {pair.Key}:");
                             input = Console.ReadLine();
                             if (string.IsNullOrEmpty(input))
                             {
-                                Console.WriteLine($"{pair.Value} cannot be empty");
+                                Console.WriteLine($"{pair.Key} cannot be empty");
                             }
                         }
                         if (!string.IsNullOrEmpty(input))
                         {
-                            queryFields.Add(pair.Value,input);
+                            queryFields.Add(pair.Key,input);
                             input = "";
                         }
                     }

@@ -15,6 +15,7 @@ public class Part
         Name = name;
         Supplier = supplier;
         Brand = brand;
+        Categories = new List<PartCategory>();
     }
     protected bool Equals(Part other)
     {
@@ -33,4 +34,6 @@ public class Part
     {
         return Id.GetHashCode();
     }
+
+    public override string ToString() => $"({Id}) - Name: {Name} Supplier: {Supplier} Brand: {Brand}";
 }
