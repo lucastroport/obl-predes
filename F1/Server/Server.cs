@@ -171,7 +171,8 @@ public class Server
                 .HandleMenuAction(
                     int.Parse(data.Operation), 
                     data.Query != null ? new CommandQuery(data.Query.Fields) : null,
-                    menu
+                    menu,
+                    _connectedClients.ContainsKey(_clientSocket) ? _connectedClients[_clientSocket] : null
                 );
             var userAuthenticated = response.Query.Fields.TryGetValue(ConstantKeys.Authenticated, out var username);
             var isLogout = response.Query.Fields.ContainsKey(ConstantKeys.Logout);

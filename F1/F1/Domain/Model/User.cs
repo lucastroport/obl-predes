@@ -33,4 +33,9 @@ public class User
     {
         return Id.GetHashCode();
     }
+
+    public override string ToString()
+    {
+        return $"({Id}) - {Username}";
+    }
 }

@@ -4,7 +4,7 @@ namespace F1.Domain.Repository
 {
     public class UserRepository : IUserRepository
     {
-        private IList<User> _users;
+        private List<User> _users;
         private static UserRepository _instance;
 
         private UserRepository()
@@ -12,7 +12,7 @@ namespace F1.Domain.Repository
             _users = new List<User>();
             _users.Add(new User("admin","admin", UserType.Admin));
         }
-        public static UserRepository Instance
+        public static IUserRepository Instance
         {
             get
             {
@@ -39,6 +39,15 @@ namespace F1.Domain.Repository
         {
             return _users.FirstOrDefault(user => user.Username == username);
         }
-        
+
+        public User? QueryUserById(string id)
+        {
+            return _users.FirstOrDefault(u => u.Id == id);
+        }
+
+        public List<User> GetAllMechanicUsers()
+        {
+            return _users.FindAll(u => u.Type == UserType.Mechanic);
+        }
     }
 }

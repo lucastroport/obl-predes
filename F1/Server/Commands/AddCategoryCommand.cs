@@ -8,7 +8,7 @@ namespace Server.Commands;
 public class AddCategoryCommand : ICommand
 {
     private ICategoryRepository _categoryRepository;
-    public CommandResult Execute(CommandQuery? query, Menu menu)
+    public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         CommandQuery? cmdQuery;
         if (query == null)

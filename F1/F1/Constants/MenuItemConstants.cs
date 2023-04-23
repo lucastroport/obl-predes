@@ -14,7 +14,8 @@ public static class MenuItemConstants
     public const int AssociatePictureToPart = 9;
     public const int DownloadPartPicture = 10;
     public const int SearchPartByName = 11;
-    public const int Chat = 12;
-    public const int History = 13;
-    public const int LogOut = 14;
+    public const int SendMessage = 12;
+    public const int UnreadMessages = 13;
+    public const int History = 14;
+    public const int LogOut = 15;
 }

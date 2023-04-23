@@ -12,8 +12,6 @@ namespace F1.Presentation.Views.Menu
             new(MenuItemConstants.AddUser, "Add user", new[] { UserType.Admin }, true),
             new(MenuItemConstants.Parts, "Parts", new[] { UserType.Admin, UserType.Mechanic }),
             new(MenuItemConstants.Messages, "Messages", new[] { UserType.Admin, UserType.Mechanic }, true),
-            new(MenuItemConstants.Chat, "Chat", new[] { UserType.Admin, UserType.Mechanic }),
-            new(MenuItemConstants.History, "History", new[] { UserType.Admin, UserType.Mechanic }, true),
             new(MenuItemConstants.LogOut, "Exit/LogOut", new[] { UserType.Admin, UserType.Mechanic }, true)
         };
 
@@ -30,6 +28,13 @@ namespace F1.Presentation.Views.Menu
                 new[] { UserType.Admin, UserType.Mechanic }, true),
             new(MenuItemConstants.SearchPartByName, "Search part by name", new[] { UserType.Admin, UserType.Mechanic },
                 true)
+        };
+
+        public static List<MenuItem> MessagesMenuItems = new()
+        {
+            new(MenuItemConstants.SendMessage, "Send Message", new[] { UserType.Admin, UserType.Mechanic }),
+            new(MenuItemConstants.UnreadMessages, "Unread messages", new[] { UserType.Admin, UserType.Mechanic }),
+            new(MenuItemConstants.History, "History", new[] { UserType.Admin, UserType.Mechanic }, true)
         };
 
         public static string ListItems(List<MenuItem> items)
