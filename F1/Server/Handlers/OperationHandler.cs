@@ -22,6 +22,7 @@ public class OperationHandler
                 { MenuItemConstants.AssociateCategoryToPart, new LinkCategoryCommand() },
                 { MenuItemConstants.AssociatePictureToPart, new LinkFileToPartCommand() },
                 { MenuItemConstants.DownloadPartPicture, new DownloadPartPhotoCommand() },
+                { MenuItemConstants.SearchPartByName, new QueryPartsCommand() },
             };
         }
 

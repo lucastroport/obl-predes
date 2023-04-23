@@ -50,7 +50,7 @@ namespace F1.Domain.Repository
 
         public List<Part> QueryItemsByName(string name)
         {
-            return _parts.TakeWhile(p => p.Name.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+            return _parts.FindAll(p => p.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
         }
 
         public List<Part> GetAllParts() => _parts;
