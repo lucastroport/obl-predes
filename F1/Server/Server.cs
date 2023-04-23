@@ -1,13 +1,12 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using F1;
 using F1.Constants;
+using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
 using log4net;
 using log4net.Config;
-using Microsoft.VisualBasic;
 using ProtocolHelper;
 using ProtocolHelper.Communication;
 using ProtocolHelper.Communication.Models;
@@ -32,7 +31,9 @@ public class Server
         // Set the IP address and port for the server
         var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ServerIpConfigKey));
         int port = int.Parse(SettingsHelper.ReadSettings(AppConfig.ServerPortConfigKey));
-
+        var adminPassword = SettingsHelper.ReadSettings(AppConfig.AdminPasswordKey);
+        UserRepository.Instance.AddUser(new User("admin",adminPassword, UserType.Admin));
+        
         var socket = new Socket(
             ipAddress.AddressFamily,
             SocketType.Stream,
