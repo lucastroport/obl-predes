@@ -1,4 +1,5 @@
 using F1.Domain.Comparator;
+using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
 
@@ -8,15 +9,21 @@ public class MessageHistoryCommand : ICommand
 {
     private IMessageRepository _messageRepository;
     private IUserRepository _userRepository;
+    private static readonly object QueryLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername = null)
     {
         CommandQuery? cmdQuery;
         _messageRepository = MessageRepository.Instance;
         _userRepository = UserRepository.Instance;
-        
-        var receiverUser = _userRepository.QueryByUsername(authUsername);
-        var messages = _messageRepository.GetAllMessagesForUser(receiverUser.Id);
-        
+
+        User? receiverUser;
+        List<Message> messages = new List<Message>();
+        lock (QueryLock)
+        {
+            receiverUser = _userRepository.QueryByUsername(authUsername);
+            messages = _messageRepository.GetAllMessagesForUser(receiverUser.Id);   
+        }
+
         messages.Sort(new MessageDateComparer());
         
         if (messages.Count > 0)

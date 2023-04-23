@@ -8,6 +8,7 @@ namespace Server.Commands;
 public class AddPartCommand : ICommand
 {
     private IPartRepository _partRepository;
+    private static readonly object PartAddLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         CommandQuery? cmdQuery;
@@ -28,8 +29,11 @@ public class AddPartCommand : ICommand
         query.Fields.TryGetValue(ConstantKeys.PartBrandKey, out var brand);
         query.Fields.TryGetValue(ConstantKeys.PartSupplierKey, out var supplier);
 
-        _partRepository.AddPart(new Part(name, supplier, brand));
-        
+        lock (PartAddLock)
+        {
+            _partRepository.AddPart(new Part(name, supplier, brand));   
+        }
+
         cmdQuery = new CommandQuery(
             new Dictionary<string, string>
             {

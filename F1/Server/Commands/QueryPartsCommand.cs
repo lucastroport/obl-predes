@@ -1,4 +1,5 @@
 using F1.Constants;
+using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
 
@@ -7,13 +8,13 @@ namespace Server.Commands;
 public class QueryPartsCommand : ICommand
 {
     private IPartRepository _partRepository;
+    private static readonly object QueryContainsNameLock = new();
+    private static readonly object QueryItemsByNameLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         _partRepository = PartRepository.Instance;
-        
         CommandQuery? cmdQuery;
-        _partRepository = PartRepository.Instance;
-        
+
         if (query == null)
         {
             cmdQuery = new CommandQuery(new Dictionary<string, string>
@@ -22,12 +23,21 @@ public class QueryPartsCommand : ICommand
             });
             return new CommandResult(cmdQuery);
         }
-        
-        var containsNameSearch= query.Fields.TryGetValue(ConstantKeys.SearchPartKey, out var searchName);
-        
+
+        bool containsNameSearch;
+        string searchName = "";
+        lock (QueryContainsNameLock)
+        {
+            containsNameSearch= query.Fields.TryGetValue(ConstantKeys.SearchPartKey, out searchName);   
+        }
+
         if (containsNameSearch)
         {
-            var found = _partRepository.QueryItemsByName(searchName);
+            List<Part> found = new List<Part>();
+            lock (QueryItemsByNameLock)
+            {
+                found = _partRepository.QueryItemsByName(searchName);   
+            }
 
             if (found.Count > 0)
             {
