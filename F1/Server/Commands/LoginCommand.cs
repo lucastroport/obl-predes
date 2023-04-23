@@ -9,7 +9,7 @@ namespace Server.Commands;
 public class LoginCommand : ICommand
 {
     private IUserRepository _userRepository;
-    public CommandResult Execute(CommandQuery? query, Menu menu)
+    public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         CommandQuery? cmdQuery;
         if (query == null)
@@ -43,10 +43,13 @@ public class LoginCommand : ICommand
             new Dictionary<string, string>
             {
                 {"RESULT", $"{resultMessage}"},
-                {"MENU", $"{menu}"},
-                {"AUTHENTICATED", $"{foundUser.Username}"}
+                {"MENU", $"{menu}"}
             }
             );
+        if (foundUser != null)
+        {
+            cmdQuery.Fields.Add("AUTHENTICATED", foundUser.Username);
+        }
         return new CommandResult(cmdQuery);
     }
 }

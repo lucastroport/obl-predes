@@ -5,7 +5,7 @@ namespace Server.Commands;
 
 public class LogOutCommand : ICommand
 {
-    public CommandResult Execute(CommandQuery? query, Menu menu)
+    public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         menu.TriggerNotAuthMenu();
         var cmdQuery = new CommandQuery(

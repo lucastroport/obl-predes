@@ -9,7 +9,7 @@ public class LinkCategoryCommand : ICommand
 {
     private IPartRepository _partRepository;
     private ICategoryRepository _categoryRepository;
-    public CommandResult Execute(CommandQuery? query, Menu menu)
+    public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         _partRepository = PartRepository.Instance;
         _categoryRepository = CategoryRepository.Instance;

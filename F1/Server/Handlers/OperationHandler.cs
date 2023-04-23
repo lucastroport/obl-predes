@@ -23,10 +23,14 @@ public class OperationHandler
                 { MenuItemConstants.AssociatePictureToPart, new LinkFileToPartCommand() },
                 { MenuItemConstants.DownloadPartPicture, new DownloadPartPhotoCommand() },
                 { MenuItemConstants.SearchPartByName, new QueryPartsCommand() },
+                { MenuItemConstants.Messages, new MessagesCommand() },
+                { MenuItemConstants.SendMessage, new SendMessageCommand() },
+                { MenuItemConstants.UnreadMessages, new UnreadMessagesCommand() },
+                { MenuItemConstants.History, new MessageHistoryCommand() }
             };
         }
 
-        public ProtocolData HandleMenuAction(int operation, CommandQuery? query, Menu menu)
+        public ProtocolData HandleMenuAction(int operation, CommandQuery? query, Menu menu, string? authUsername)
         {
             if (query == null && operation == 0)
             {
@@ -39,14 +43,14 @@ public class OperationHandler
                     }
                 );
             }
-            return HandleCommand(operation, query, menu);
+            return HandleCommand(operation, query, menu, authUsername);
         }
 
-        private ProtocolData HandleCommand(int operation, CommandQuery? query, Menu menu)
+        private ProtocolData HandleCommand(int operation, CommandQuery? query, Menu menu, string? authUsername)
         {
             if (commandMap.TryGetValue(operation, out ICommand command))
             {
-                var result = command.Execute(query, menu);
+                var result = command.Execute(query, menu, authUsername);
                 
                 return new ProtocolData(
                     false,

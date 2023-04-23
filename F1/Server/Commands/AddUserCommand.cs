@@ -9,7 +9,7 @@ namespace Server.Commands;
 public class AddUserCommand : ICommand
 {
     private IUserRepository _userRepository;
-    public CommandResult Execute(CommandQuery? query, Menu menu)
+    public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         CommandQuery? cmdQuery;
         if (query == null)
@@ -24,7 +24,6 @@ public class AddUserCommand : ICommand
         _userRepository = UserRepository.Instance;
         query.Fields.TryGetValue(ConstantKeys.UsernameKey, out var username);
         query.Fields.TryGetValue(ConstantKeys.PasswordKey, out var password);
-        query.Fields.TryGetValue(ConstantKeys.Authenticated, out var authUsername);
 
         var authenticatedUser = _userRepository.QueryByUsername(authUsername);
         var userExists = _userRepository.QueryByUsername(username) != null;

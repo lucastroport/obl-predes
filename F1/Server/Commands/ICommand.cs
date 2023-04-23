@@ -4,5 +4,5 @@ namespace Server.Commands;
 
 public interface ICommand
 {
-    CommandResult Execute(CommandQuery? query, Menu menu);
+    CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername = null);
 }

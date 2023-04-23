@@ -15,7 +15,7 @@ namespace F1.Domain.Repository
             _parts = new List<Part>();
         }
 
-        public static PartRepository Instance
+        public static IPartRepository Instance
         {
             get
             {

@@ -7,7 +7,7 @@ namespace Server.Commands;
 public class LinkFileToPartCommand : ICommand
 {
     private IPartRepository _partRepository;
-    public CommandResult Execute(CommandQuery? query, Menu menu)
+    public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         CommandQuery? cmdQuery;
         _partRepository = PartRepository.Instance;

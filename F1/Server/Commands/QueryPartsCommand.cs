@@ -7,7 +7,7 @@ namespace Server.Commands;
 public class QueryPartsCommand : ICommand
 {
     private IPartRepository _partRepository;
-    public CommandResult Execute(CommandQuery? query, Menu menu)
+    public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         _partRepository = PartRepository.Instance;
         

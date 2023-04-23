@@ -31,5 +31,7 @@ public class ConstantKeys
     public static readonly string FileSizeKey = "FileSizeKey";
     public static readonly string SaveFileKey = "SaveFileKey";
     public static readonly string SendFileUrlKey = "SendFileUrlKey";
-    public static readonly string FileSaveSuccessKey = "FileSaveSuccessKey";
+    public static readonly string SendMessageKey = "Message";
+    public static readonly string SelectUserKey = "User id";
+    
 }
