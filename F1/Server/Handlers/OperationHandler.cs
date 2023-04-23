@@ -20,6 +20,7 @@ public class OperationHandler
                 { MenuItemConstants.Parts, new PartsCommand() },
                 { MenuItemConstants.AddPartCategory, new AddCategoryCommand() },
                 { MenuItemConstants.AssociateCategoryToPart, new LinkCategoryCommand() },
+                { MenuItemConstants.AssociatePictureToPart, new LinkFileToPartCommand() }
                 // { MenuItemConstants.AddPart, new AddPartCommand() },
                 // { MenuItemConstants.AddPartCategory, new AddPartCategoryCommand() },
                 // { MenuItemConstants.AssociateCategoryToPart, new AssociateCategoryToPartCommand() },

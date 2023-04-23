@@ -24,4 +24,9 @@ public class ConstantKeys
     public static readonly string CategoryNameKey = "Category Name";
     public static readonly string SelectPartKey = "Select Part";
     public static readonly string SelectPartCategoryKey = "Select Category";
+    public static readonly string EnterFilePathKey = "Filepath";
+    public static readonly string FileNameKey = "FileNameKey";
+    public static readonly string FileSizeKey = "FileSizeKey";
+    public static readonly string SaveFileKey = "SaveFileKey";
+    public static readonly string FileSaveSuccessKey = "FileSaveSuccessKey";
 }

@@ -91,7 +91,44 @@ public class Server
                 {
                     var protocolData = protocolProcessor.Process();
                     // Process the data and generate a response
-                    ProcessData(protocolProcessor, protocolData);
+                    bool containsFilename = false;
+                    bool containsFileSize = false;
+                    
+                    if (protocolData.Query != null)
+                    {
+                        containsFilename = protocolData.Query.Fields.TryGetValue(ConstantKeys.FileNameKey, out var filename);
+                        containsFileSize = protocolData.Query.Fields.TryGetValue(ConstantKeys.FileSizeKey, out var fileSizeRaw);
+
+                        if (containsFilename && containsFileSize)
+                        {
+                            var fileCommonHandler = new FileCommsHandler(_socket);
+                            fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
+                            var response = new ProtocolData(
+                                false,
+                                protocolData.Operation,
+                                new QueryData
+                                {
+                                    Fields = new Dictionary<string, string>
+                                    {
+                                        { "RESULT", "File transferred correctly" },
+                                        { "MENU",  MenuOptions.ListItems(MenuOptions.MenuItems)}
+                                    }
+                                }
+                            );
+                            protocolProcessor.Send(
+                                $"{response.Header}" +
+                                $"{response.Operation}" +
+                                response.QueryLength +
+                                $"{QueryDataSerializer.Serialize(response.Query)}"
+                                );
+                        }
+
+                    }
+                    if (!containsFilename && !containsFileSize)
+                    {
+                        ProcessData(protocolProcessor, protocolData); 
+                    }
+                    
                 }
                 catch (Exception e)
                 {
@@ -153,7 +190,7 @@ public class Server
                       $"{response.Operation}" +
                       response.QueryLength +
                       $"{QueryDataSerializer.Serialize(response.Query)}";
-            processor.SendAck(ack);
+            processor.Send(ack);
         }
     }
 

@@ -14,7 +14,7 @@ internal class Client
 {
     private static readonly SettingsHelper SettingsHelper = new();
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Client));
-    
+
     static void Main()
     {
         var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ClientIpConfigKey));
@@ -47,8 +47,9 @@ internal class Client
                 null
             );
             var serializedQuery = QueryDataSerializer.Serialize(protocolData.Query);
+            protocolProcessor = new ProtocolProcessor(handler);
 
-            SendPacket(handler,
+            protocolProcessor.Send(
                 $"{protocolData.Header}" +
                 $"{protocolData.Operation}" +
                 $"{protocolData.QueryLength}" +
@@ -56,13 +57,11 @@ internal class Client
             );
 
             string message = "";
-
-            protocolProcessor = new ProtocolProcessor(handler);
             response = protocolProcessor.Process();
 
             var menu = "";
             var isMenu = response.Query != null && response.Query.Fields.TryGetValue("MENU", out menu);
-            
+
             if (isMenu)
             {
                 if (isMenu)
@@ -70,6 +69,7 @@ internal class Client
                     Console.WriteLine(menu);
                 }
             }
+
             var waitingResponse = false;
             while (!message.Equals($"{Constants.MenuItemConstants.ExitMenu}"))
             {
@@ -82,73 +82,87 @@ internal class Client
                         message,
                         null
                     );
-        
+
                     serializedQuery = QueryDataSerializer.Serialize(protocolData.Query);
-        
-                    SendPacket(handler,
+
+                    protocolProcessor.Send(
                         $"{protocolData.Header}" +
                         $"{protocolData.Operation}" +
                         $"{protocolData.QueryLength}" +
                         $"{serializedQuery}"
                     );
                 }
+
                 // Receive and print the server response
                 response = protocolProcessor.Process();
 
                 var result = "";
                 if (response.Query != null) isMenu = response.Query.Fields.TryGetValue("MENU", out menu);
                 var containsResult = response.Query != null && response.Query.Fields.TryGetValue("RESULT", out result);
+                var isSaveArchive = response.Query != null && response.Query.Fields.ContainsKey(Constants.ConstantKeys.SaveFileKey);
 
-                if (isMenu || containsResult)
+                if (isSaveArchive)
                 {
-                    if (containsResult)
-                    {
-                        Console.WriteLine(result);
-                    }
-                    if (isMenu)
-                    {
-                        Console.WriteLine(menu);
-                    }
-                    waitingResponse = false;
+                    var fileCommonHandler = new FileCommsHandler(client);
+                    response.Query.Fields.TryGetValue(Constants.ConstantKeys.SaveFileKey, out var filePath);
+                    fileCommonHandler.SendFile(filePath, response);
                 }
                 else
                 {
-                    var queryFields = new Dictionary<string, string>();
-                    // We ask the client for fields to complete and send the server
-                    string input = "";
-                    foreach (KeyValuePair<string, string> pair in response.Query.Fields)
+                    if (isMenu || containsResult)
                     {
-                        while (string.IsNullOrEmpty(input))
+                        if (containsResult)
                         {
-                            Console.WriteLine($"{pair.Value} {pair.Key}:");
-                            input = Console.ReadLine();
-                            if (string.IsNullOrEmpty(input))
+                            Console.WriteLine(result);
+                        }
+
+                        if (isMenu)
+                        {
+                            Console.WriteLine(menu);
+                        }
+
+                        waitingResponse = false;
+                    }
+                    else
+                    {
+                        var queryFields = new Dictionary<string, string>();
+                        // We ask the client for fields to complete and send the server
+                        string input = "";
+                        foreach (KeyValuePair<string, string> pair in response.Query.Fields)
+                        {
+                            while (string.IsNullOrEmpty(input))
                             {
-                                Console.WriteLine($"{pair.Key} cannot be empty");
+                                Console.WriteLine($"{pair.Value} {pair.Key}:");
+                                input = Console.ReadLine();
+                                if (string.IsNullOrEmpty(input))
+                                {
+                                    Console.WriteLine($"{pair.Key} cannot be empty");
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(input))
+                            {
+                                queryFields.Add(pair.Key, input);
+                                input = "";
                             }
                         }
-                        if (!string.IsNullOrEmpty(input))
-                        {
-                            queryFields.Add(pair.Key,input);
-                            input = "";
-                        }
+
+                        protocolData = new ProtocolData(
+                            true,
+                            response.Operation,
+                            new QueryData { Fields = queryFields }
+                        );
+
+                        serializedQuery = QueryDataSerializer.Serialize(protocolData.Query);
+
+                        protocolProcessor.Send(
+                            $"{protocolData.Header}" +
+                            $"{protocolData.Operation}" +
+                            $"{protocolData.QueryLength}" +
+                            $"{serializedQuery}"
+                        );
+                        waitingResponse = true;
                     }
-
-                    protocolData = new ProtocolData(
-                        true,
-                        response.Operation,
-                        new QueryData { Fields = queryFields }
-                    );
-
-                    serializedQuery = QueryDataSerializer.Serialize(protocolData.Query);
-        
-                    SendPacket(handler,
-                        $"{protocolData.Header}" +
-                        $"{protocolData.Operation}" +
-                        $"{protocolData.QueryLength}" +
-                        $"{serializedQuery}"
-                    );
-                    waitingResponse = true;
                 }
             }
         }
@@ -157,16 +171,5 @@ internal class Client
             Logger.Error("Exception: {0}", e);
             client.Close();
         }
-    }
-    
-    private static void SendPacket(ISocketHandler handler, string message)
-    {
-        // Send the length of the data first
-        byte[] messageBytes = Encoding.ASCII.GetBytes(message);
-        byte[] lengthBytes = BitConverter.GetBytes(messageBytes.Length);
-        handler.Send(lengthBytes);
-
-        // Send the actual data to the server
-        handler.Send(messageBytes);
     }
 }
