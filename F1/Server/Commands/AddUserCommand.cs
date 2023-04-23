@@ -9,6 +9,8 @@ namespace Server.Commands;
 public class AddUserCommand : ICommand
 {
     private IUserRepository _userRepository;
+    private static readonly object UserAddLock = new();
+    private static readonly object UserQueryLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
         CommandQuery? cmdQuery;
@@ -25,9 +27,15 @@ public class AddUserCommand : ICommand
         query.Fields.TryGetValue(ConstantKeys.UsernameKey, out var username);
         query.Fields.TryGetValue(ConstantKeys.PasswordKey, out var password);
 
-        var authenticatedUser = _userRepository.QueryByUsername(authUsername);
-        var userExists = _userRepository.QueryByUsername(username) != null;
+        User? authenticatedUser = null;
+        bool userExists;
         
+        lock (UserQueryLock)
+        {
+            authenticatedUser = _userRepository.QueryByUsername(authUsername);
+            userExists = _userRepository.QueryByUsername(username) != null;   
+        }
+
         if (authenticatedUser != null && authenticatedUser.Type == UserType.Admin)
         {
             if (userExists)
@@ -42,10 +50,13 @@ public class AddUserCommand : ICommand
             }
             else
             {
-                _userRepository.AddUser(
-                    new User(username, password)
-                );
-        
+                lock (UserAddLock)
+                {
+                    _userRepository.AddUser(
+                        new User(username, password)
+                    );   
+                }
+
                 cmdQuery = new CommandQuery(
                     new Dictionary<string, string>
                     {

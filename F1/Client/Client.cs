@@ -14,7 +14,9 @@ internal class Client
 {
     private static readonly SettingsHelper SettingsHelper = new();
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Client));
-
+    private static readonly object ProcessorLock = new();
+    private static readonly object SendFileLock = new();
+    private static readonly object ReceiveFileLock = new();
     static void Main()
     {
         var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ClientIpConfigKey));
@@ -25,7 +27,7 @@ internal class Client
         var client = new Socket(
             ipAddress.AddressFamily,
             SocketType.Stream,
-            ProtocolType.Tcp);
+            ProtocolType.Tcp);   
 
         try
         {
@@ -56,8 +58,11 @@ internal class Client
                 $"{serializedQuery}"
             );
 
+            lock (ProcessorLock)
+            {
+                response = protocolProcessor.Process();
+            }
             string message = "";
-            response = protocolProcessor.Process();
 
             var menu = "";
             var isMenu = response.Query != null && response.Query.Fields.TryGetValue("MENU", out menu);
@@ -107,17 +112,23 @@ internal class Client
                 
                 if (isSaveArchive)
                 {
-                    var fileCommonHandler = new FileCommsHandler(client);
-                    response.Query.Fields.TryGetValue(Constants.ConstantKeys.SaveFileKey, out var filePath);
-                    fileCommonHandler.SendFile(filePath, response);
+                    lock (SendFileLock)
+                    {
+                        var fileCommonHandler = new FileCommsHandler(client);
+                        response.Query.Fields.TryGetValue(Constants.ConstantKeys.SaveFileKey, out var filePath);
+                        fileCommonHandler.SendFile(filePath, response);   
+                    }
                 }
                 else
                 {
                     if (containsFilename && containsFileSize)
                     {
-                        var fileCommonHandler = new FileCommsHandler(client);
-                        var writePath = fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
-                        Console.WriteLine($"File downloaded in {writePath}");
+                        lock (ReceiveFileLock)
+                        {
+                            var fileCommonHandler = new FileCommsHandler(client);
+                            var writePath = fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
+                            Console.WriteLine($"File downloaded in {writePath}");   
+                        }
                     }
                     
                     if (isMenu || containsResult)
