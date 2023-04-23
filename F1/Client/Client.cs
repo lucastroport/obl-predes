@@ -97,10 +97,14 @@ internal class Client
                 response = protocolProcessor.Process();
 
                 var result = "";
+                var filename = "";
+                var fileSizeRaw = "";
                 if (response.Query != null) isMenu = response.Query.Fields.TryGetValue("MENU", out menu);
                 var containsResult = response.Query != null && response.Query.Fields.TryGetValue("RESULT", out result);
                 var isSaveArchive = response.Query != null && response.Query.Fields.ContainsKey(Constants.ConstantKeys.SaveFileKey);
-
+                var containsFilename = response.Query != null && response.Query.Fields.TryGetValue(Constants.ConstantKeys.FileNameKey, out filename);
+                var containsFileSize = response.Query != null && response.Query.Fields.TryGetValue(Constants.ConstantKeys.FileSizeKey, out fileSizeRaw);
+                
                 if (isSaveArchive)
                 {
                     var fileCommonHandler = new FileCommsHandler(client);
@@ -109,6 +113,13 @@ internal class Client
                 }
                 else
                 {
+                    if (containsFilename && containsFileSize)
+                    {
+                        var fileCommonHandler = new FileCommsHandler(client);
+                        var writePath = fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
+                        Console.WriteLine($"File downloaded in {writePath}");
+                    }
+                    
                     if (isMenu || containsResult)
                     {
                         if (containsResult)
@@ -126,7 +137,7 @@ internal class Client
                     else
                     {
                         var queryFields = new Dictionary<string, string>();
-                        // We ask the client for fields to complete and send the server
+                        // We ask the client for fields to complete and send to the server
                         string input = "";
                         foreach (KeyValuePair<string, string> pair in response.Query.Fields)
                         {

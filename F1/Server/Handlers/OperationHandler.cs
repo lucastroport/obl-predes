@@ -20,18 +20,8 @@ public class OperationHandler
                 { MenuItemConstants.Parts, new PartsCommand() },
                 { MenuItemConstants.AddPartCategory, new AddCategoryCommand() },
                 { MenuItemConstants.AssociateCategoryToPart, new LinkCategoryCommand() },
-                { MenuItemConstants.AssociatePictureToPart, new LinkFileToPartCommand() }
-                // { MenuItemConstants.AddPart, new AddPartCommand() },
-                // { MenuItemConstants.AddPartCategory, new AddPartCategoryCommand() },
-                // { MenuItemConstants.AssociateCategoryToPart, new AssociateCategoryToPartCommand() },
-                // { MenuItemConstants.AssociatePictureToPart, new AssociatePictureToPartCommand() },
-                // { MenuItemConstants.SearchPartById, new SearchPartByIdCommand() },
-                // { MenuItemConstants.SearchPartByName, new SearchPartByNameCommand() },
-                // { MenuItemConstants.Chat, new ChatCommand() },
-                // { MenuItemConstants.History, new HistoryCommand() },
-                // { MenuItemConstants.ResetAdminPassword, new ResetAdminPasswordCommand() },
-                // { MenuItemConstants.ChangeIpPort, new ChangeIpPortCommand() },
-                // { MenuItemConstants.ChangeIpAddress, new ChangeIpAddressCommand() },
+                { MenuItemConstants.AssociatePictureToPart, new LinkFileToPartCommand() },
+                { MenuItemConstants.DownloadPartPicture, new DownloadPartPhotoCommand() },
             };
         }
 

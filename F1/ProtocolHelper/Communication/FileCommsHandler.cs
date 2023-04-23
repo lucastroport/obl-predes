@@ -7,7 +7,6 @@ namespace ProtocolHelper.Communication;
 
 public class FileCommsHandler
 {
-    private readonly ConversionHandler _conversionHandler;
     private readonly FileHandler.FileHandler _fileHandler;
     private readonly FileStreamHandler _fileStreamHandler;
     private readonly ProtocolProcessor _protocolProcessor;
@@ -15,7 +14,6 @@ public class FileCommsHandler
 
     public FileCommsHandler(Socket socket)
     {
-        _conversionHandler = new ConversionHandler();
         _fileHandler = new FileHandler.FileHandler();
         _fileStreamHandler = new FileStreamHandler();
         _socketHandler = new SocketHandler(socket);
@@ -27,19 +25,13 @@ public class FileCommsHandler
         if (_fileHandler.FileExists(path))
         {
             var fileName = _fileHandler.GetFileName(path);
-            // _socketHandler.Send(_conversionHandler.ConvertIntToBytes(fileName.Length));
-            // _socketHandler.Send(_conversionHandler.ConvertStringToBytes(fileName));
-
             long fileSize = _fileHandler.GetFileSize(path);
-            var convertedFileSize = _conversionHandler.ConvertLongToBytes(fileSize);
-            // _socketHandler.Send(convertedFileSize);
+            protocolData.Query.Fields.Add(ConstantKeys.FileNameKey, fileName);
+            protocolData.Query.Fields.Add(ConstantKeys.FileSizeKey, $"{fileSize}");
+            
             var query = new QueryData
             {
-                Fields = new Dictionary<string, string>
-                {
-                    {ConstantKeys.FileNameKey, fileName},
-                    {ConstantKeys.FileSizeKey, $"{fileSize}"}
-                }
+                Fields = protocolData.Query.Fields
             };
             protocolData.Query = query;
 
@@ -64,17 +56,9 @@ public class FileCommsHandler
         }
     }
 
-    public void ReceiveFile(long fileSize, string filename)
+    public string ReceiveFile(long fileSize, string filename)
     {
-        // var protocolData = _protocolProcessor.Process();
-        // protocolData.Query.Fields.TryGetValue(ConstantKeys.FileNameKey, out var filename);
-        // int fileNameSize = _conversionHandler.ConvertBytesToInt(
-        //     _socketHandler.Receive(FileUtils.FixedDataSize));
-        // string fileName = _conversionHandler.ConvertBytesToString(_socketHandler.Receive(fileNameSize));
-        // protocolData.Query.Fields.TryGetValue(ConstantKeys.FileSizeKey, out var fileSizeRaw);
-        // long fileSize = long.Parse(fileSizeRaw);
-        
-        ReceiveFileWithStreams(fileSize, filename);
+        return ReceiveFileWithStreams(fileSize, filename);
     }
 
     private void SendFileWithStream(long fileSize, string path)
@@ -103,12 +87,13 @@ public class FileCommsHandler
         }
     }
 
-    private void ReceiveFileWithStreams(long fileSize, string fileName)
+    private string ReceiveFileWithStreams(long fileSize, string fileName)
     {
         long fileParts = FileUtils.CalculateFileParts(fileSize);
         long offset = 0;
         long currentPart = 1;
-
+        var writePath = "";
+            
         while (fileSize > offset)
         {
             byte[] data;
@@ -123,8 +108,10 @@ public class FileCommsHandler
                 data = _socketHandler.Receive(FileUtils.MaxPacketSize);
                 offset += FileUtils.MaxPacketSize;
             }
-            _fileStreamHandler.Write(fileName, data);
+            writePath = _fileStreamHandler.Write(fileName, data);
             currentPart++;
         }
+
+        return writePath;
     }
 }

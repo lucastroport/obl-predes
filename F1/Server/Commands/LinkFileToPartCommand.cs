@@ -9,8 +9,8 @@ public class LinkFileToPartCommand : ICommand
     private IPartRepository _partRepository;
     public CommandResult Execute(CommandQuery? query, Menu menu)
     {
-        _partRepository = PartRepository.Instance;
         CommandQuery? cmdQuery;
+        _partRepository = PartRepository.Instance;
         if (query == null)
         {
             cmdQuery = new CommandQuery(new Dictionary<string, string>
@@ -23,18 +23,13 @@ public class LinkFileToPartCommand : ICommand
         
         query.Fields.TryGetValue(ConstantKeys.EnterFilePathKey, out var path);
         query.Fields.TryGetValue(ConstantKeys.SelectPartKey, out var partId);
-        var part = _partRepository.QueryById(partId);
 
-        if (part != null)
-        {
-            part.PhotoUrl = path;
-        }
-        
         return new CommandResult(
             new CommandQuery(
                 new Dictionary<string, string>
                 {
-                    {ConstantKeys.SaveFileKey, path}
+                    {ConstantKeys.SaveFileKey, path},
+                    {ConstantKeys.PartKey, partId}
                 }
             )
         );

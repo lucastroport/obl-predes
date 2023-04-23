@@ -26,6 +26,8 @@ namespace F1.Presentation.Views.Menu
                 new[] { UserType.Admin, UserType.Mechanic }, true),
             new(MenuItemConstants.AssociatePictureToPart, "Associate picture to part",
                 new[] { UserType.Admin, UserType.Mechanic }, true),
+            new(MenuItemConstants.DownloadPartPicture, "Search for products to download picture",
+                new[] { UserType.Admin, UserType.Mechanic }, true),
             new(MenuItemConstants.SearchPartById, "Search part by id", new[] { UserType.Admin, UserType.Mechanic },
                 true),
             new(MenuItemConstants.SearchPartByName, "Search part by name", new[] { UserType.Admin, UserType.Mechanic },

@@ -12,9 +12,10 @@ public static class MenuItemConstants
     public const int AddPartCategory = 7;
     public const int AssociateCategoryToPart = 8;
     public const int AssociatePictureToPart = 9;
-    public const int SearchPartById = 10;
-    public const int SearchPartByName = 11;
-    public const int Chat = 12;
-    public const int History = 13;
-    public const int LogOut = 14;
+    public const int DownloadPartPicture = 10;
+    public const int SearchPartById = 11;
+    public const int SearchPartByName = 12;
+    public const int Chat = 13;
+    public const int History = 14;
+    public const int LogOut = 15;
 }
