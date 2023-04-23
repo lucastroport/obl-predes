@@ -14,38 +14,54 @@ public class AddUserCommand : ICommand
         CommandQuery? cmdQuery;
         if (query == null)
         {
-            cmdQuery = new CommandQuery(new Dictionary<string, string>());
-            cmdQuery.PopulateQuery(new List<string>{"user","password"});
-            
+            cmdQuery = new CommandQuery(new Dictionary<string, string>
+            {
+                {ConstantKeys.UsernameKey, "Enter"},
+                {ConstantKeys.PasswordKey, "Enter"}
+            });
             return new CommandResult(cmdQuery);
         }
         _userRepository = UserRepository.Instance;
-        query.Fields.TryGetValue("user", out var username);
-        query.Fields.TryGetValue("password", out var password);
-        query.Fields.TryGetValue(ConstantKeys.Authenticated, out var authenticatedUser);
+        query.Fields.TryGetValue(ConstantKeys.UsernameKey, out var username);
+        query.Fields.TryGetValue(ConstantKeys.PasswordKey, out var password);
+        query.Fields.TryGetValue(ConstantKeys.Authenticated, out var authUsername);
 
-        var user = _userRepository.QueryByUsername(authenticatedUser);
-
-        if (user != null && user.Type == UserType.Admin)
-        {
-            _userRepository.AddUser(
-                new User(username, password)
-            );
+        var authenticatedUser = _userRepository.QueryByUsername(authUsername);
+        var userExists = _userRepository.QueryByUsername(username) != null;
         
-            cmdQuery = new CommandQuery(
-                new Dictionary<string, string>
-                {
-                    {"RESULT", "User registered correctly."},
-                    {"MENU", $"{menu}"}
-                }
-            );    
+        if (authenticatedUser != null && authenticatedUser.Type == UserType.Admin)
+        {
+            if (userExists)
+            {
+                cmdQuery = new CommandQuery(
+                    new Dictionary<string, string>
+                    {
+                        {"RESULT", "ERROR: User already exists."},
+                        {"MENU", $"{menu}"}
+                    }
+                ); 
+            }
+            else
+            {
+                _userRepository.AddUser(
+                    new User(username, password)
+                );
+        
+                cmdQuery = new CommandQuery(
+                    new Dictionary<string, string>
+                    {
+                        {"RESULT", "User registered correctly."},
+                        {"MENU", $"{menu}"}
+                    }
+                );   
+            }
         }
         else
         {
             cmdQuery = new CommandQuery(
                 new Dictionary<string, string>
                 {
-                    {"RESULT", "You need admin access to add a user."},
+                    {"RESULT", "ERROR: You need admin access to add a user."},
                     {"MENU", $"{menu}"}
                 }
             );  

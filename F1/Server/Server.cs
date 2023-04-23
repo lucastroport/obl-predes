@@ -3,9 +3,11 @@ using System.Net.Sockets;
 using System.Text;
 using F1;
 using F1.Constants;
+using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
 using log4net;
 using log4net.Config;
+using Microsoft.VisualBasic;
 using ProtocolHelper;
 using ProtocolHelper.Communication;
 using ProtocolHelper.Communication.Models;
@@ -91,7 +93,51 @@ public class Server
                 {
                     var protocolData = protocolProcessor.Process();
                     // Process the data and generate a response
-                    ProcessData(protocolProcessor, protocolData);
+                    bool containsFilename = false;
+                    bool containsFileSize = false;
+                    
+                    if (protocolData.Query != null)
+                    {
+                        containsFilename = protocolData.Query.Fields.TryGetValue(ConstantKeys.FileNameKey, out var filename);
+                        containsFileSize = protocolData.Query.Fields.TryGetValue(ConstantKeys.FileSizeKey, out var fileSizeRaw);
+                        protocolData.Query.Fields.TryGetValue(ConstantKeys.PartKey, out var partId);
+
+                        if (containsFilename && containsFileSize)
+                        {
+                            var fileCommonHandler = new FileCommsHandler(_socket);
+                            var writePath = fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
+                            var partRepository = PartRepository.Instance;
+                            var part = partRepository.QueryById(partId);
+                            if (part != null)
+                            {
+                                part.PhotoUrl = writePath;
+                            }
+                            var response = new ProtocolData(
+                                false,
+                                protocolData.Operation,
+                                new QueryData
+                                {
+                                    Fields = new Dictionary<string, string>
+                                    {
+                                        { "RESULT", "File transferred correctly" },
+                                        { "MENU",  MenuOptions.ListItems(MenuOptions.MenuItems)}
+                                    }
+                                }
+                            );
+                            protocolProcessor.Send(
+                                $"{response.Header}" +
+                                $"{response.Operation}" +
+                                response.QueryLength +
+                                $"{QueryDataSerializer.Serialize(response.Query)}"
+                                );
+                        }
+
+                    }
+                    if (!containsFilename && !containsFileSize)
+                    {
+                        ProcessData(protocolProcessor, protocolData, _socket); 
+                    }
+                    
                 }
                 catch (Exception e)
                 {
@@ -102,7 +148,7 @@ public class Server
             }
         }
         
-        private static void ProcessData(ProtocolProcessor processor, ProtocolData data)
+        private static void ProcessData(ProtocolProcessor processor, ProtocolData data, Socket socket)
         {
             var menu = new Menu();
             var operationHandler = new OperationHandler();
@@ -129,31 +175,40 @@ public class Server
                 );
             var userAuthenticated = response.Query.Fields.TryGetValue(ConstantKeys.Authenticated, out var username);
             var isLogout = response.Query.Fields.ContainsKey(ConstantKeys.Logout);
-            
-            if (isLogout)
+            var isSendFile = response.Query.Fields.TryGetValue(ConstantKeys.SendFileUrlKey, out var fileUrl);
+
+            if (isSendFile)
             {
-                if (_connectedClients.ContainsKey(_clientSocket))
-                {
-                    _connectedClients.Remove(_clientSocket);
-                }
+                var fileCommonHandler = new FileCommsHandler(socket);
+                fileCommonHandler.SendFile(fileUrl, response);
             }
-            if (userAuthenticated)
+            else
             {
-                if (_connectedClients.ContainsKey(_clientSocket))
+                if (isLogout)
                 {
-                    _connectedClients[_clientSocket] = username;
+                    if (_connectedClients.ContainsKey(_clientSocket))
+                    {
+                        _connectedClients.Remove(_clientSocket);
+                    }
                 }
-                else
+                if (userAuthenticated)
                 {
-                    _connectedClients.Add(_clientSocket,username);
+                    if (_connectedClients.ContainsKey(_clientSocket))
+                    {
+                        _connectedClients[_clientSocket] = username;
+                    }
+                    else
+                    {
+                        _connectedClients.Add(_clientSocket,username);
+                    }
                 }
-            }
             
-            var ack = $"{response.Header}" +
-                      $"{response.Operation}" +
-                      response.QueryLength +
-                      $"{QueryDataSerializer.Serialize(response.Query)}";
-            processor.SendAck(ack);
+                var ack = $"{response.Header}" +
+                          $"{response.Operation}" +
+                          response.QueryLength +
+                          $"{QueryDataSerializer.Serialize(response.Query)}";
+                processor.Send(ack);    
+            }
         }
     }
 

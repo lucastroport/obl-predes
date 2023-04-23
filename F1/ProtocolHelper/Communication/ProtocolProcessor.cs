@@ -55,12 +55,11 @@ public class ProtocolProcessor
         return Encoding.UTF8.GetString(data);
     }
     
-    public void SendAck(string ack)
+    public void Send(string ack)
     {
         byte[] responseBytes = Encoding.ASCII.GetBytes(ack);
         byte[] responseLengthBytes = BitConverter.GetBytes(responseBytes.Length);
         _handler.Send(responseLengthBytes);
         _handler.Send(responseBytes);
     }
-    
 }
