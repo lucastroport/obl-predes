@@ -26,7 +26,6 @@ public class Server
     private static readonly object AuthAddLock = new();
     private static readonly object ReadFieldsLock = new();
     private static readonly object SendFileLock = new();
-    private static readonly object SocketLock = new();
 
     static Server()
     {
@@ -73,6 +72,14 @@ public class Server
         catch (Exception e)
         {
             Logger.Error("Exception: {0}", e);
+            if (_connectedClients.ContainsKey(socket))
+            {
+                var user = UserRepository.Instance.QueryByUsername(_connectedClients[socket]);
+                if (user != null)
+                {
+                    user.IsLoggedIn = false;
+                }
+            }
             Console.WriteLine("Client disconnected");
         }
         finally
@@ -154,6 +161,11 @@ public class Server
                 }
                 catch (Exception e)
                 {
+                    var user = UserRepository.Instance.QueryByUsername(_connectedClients[_socket]);
+                    if (user != null)
+                    {
+                        user.IsLoggedIn = false;
+                    }
                     clientConnected = false;
                     Logger.Error("Exception:", e);
                     Console.WriteLine("Client disconnected");

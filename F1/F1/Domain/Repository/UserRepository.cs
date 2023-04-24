@@ -29,11 +29,6 @@ namespace F1.Domain.Repository
             _users.Add(u);
         }
 
-        public void RemoveUser(User u)
-        {
-            _users.Remove(u);
-        }
-
         public User? QueryByUsername(string username)
         {
             return _users.FirstOrDefault(user => user.Username == username);
