@@ -30,8 +30,10 @@ public class UnreadMessagesCommand : ICommand
         
         if (messages.Count > 0)
         {
+            
             var unreadMessages = $"\n{messages.Aggregate("", (menuString, item) => menuString + item + "\n")}";
-                
+            messages.ForEach(m => m.Seen = true);
+            
             cmdQuery = new CommandQuery(
                 new Dictionary<string, string>
                 {
