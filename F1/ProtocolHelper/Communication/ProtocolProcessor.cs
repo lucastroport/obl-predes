@@ -6,40 +6,40 @@ namespace ProtocolHelper.Communication;
 
 public class ProtocolProcessor
 {
-    private ISocketHandler _handler;
+    private INetworkHandler _handler;
     
-    public ProtocolProcessor(ISocketHandler handler)
+    public ProtocolProcessor(INetworkHandler handler)
     {
         _handler = handler;
     }
 
-    public ProtocolData Process()
+    public async Task<ProtocolData> Process()
     {
         // Receive the header from the client
         var headerLength = ProtocolData.HeaderMaxLength;
         _handler.Receive(headerLength+1);
-        var header = _handler.Receive(headerLength);
+        var header = await _handler.Receive(headerLength);
         var parsedHeader = ParseResponse(header);
         var bytesRead = header.Length;
 
         // Receive the operation from the client
         var operationLength = ProtocolData.OperationMaxLength;
         _handler.Receive(bytesRead, bytesRead);
-        var operation = _handler.Receive(operationLength);
+        var operation = await _handler.Receive(operationLength);
         var parsedOperation = ParseResponse(operation);
         bytesRead += operation.Length;
                     
         // Receive the query length from the client
         var queryLengthValue = ProtocolData.QueryMaxLength;
         _handler.Receive(bytesRead, bytesRead);
-        var queryLength = _handler.Receive(queryLengthValue);
+        var queryLength = await _handler.Receive(queryLengthValue);
         var rawQueryLength = ParseResponse(queryLength);
         var parsedQueryLengthValue = int.Parse(rawQueryLength);
         bytesRead += queryLength.Length;
                     
         // Receive the query itself
         _handler.Receive(bytesRead, bytesRead);
-        var queryRaw = _handler.Receive(parsedQueryLengthValue);
+        var queryRaw = await _handler.Receive(parsedQueryLengthValue);
         var parsedQuery = ParseResponse(queryRaw);
         var query = QueryDataSerializer.Deserialize(parsedQuery);
 

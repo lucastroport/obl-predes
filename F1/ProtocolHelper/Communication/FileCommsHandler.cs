@@ -10,14 +10,14 @@ public class FileCommsHandler
     private readonly FileHandler.FileHandler _fileHandler;
     private readonly FileStreamHandler _fileStreamHandler;
     private readonly ProtocolProcessor _protocolProcessor;
-    private readonly ISocketHandler _socketHandler;
+    private readonly INetworkHandler _networkHandler;
 
-    public FileCommsHandler(Socket socket)
+    public FileCommsHandler(TcpClient socket)
     {
         _fileHandler = new FileHandler.FileHandler();
         _fileStreamHandler = new FileStreamHandler();
-        _socketHandler = new SocketHandler(socket);
-        _protocolProcessor = new ProtocolProcessor(_socketHandler);
+        _networkHandler = new NetworkHandler(socket);
+        _protocolProcessor = new ProtocolProcessor(_networkHandler);
     }
 
     public void SendFile(string path, ProtocolData protocolData)
@@ -56,9 +56,9 @@ public class FileCommsHandler
         }
     }
 
-    public string ReceiveFile(long fileSize, string filename)
+    public async Task<string> ReceiveFile(long fileSize, string filename)
     {
-        return ReceiveFileWithStreams(fileSize, filename);
+        return await ReceiveFileWithStreams(fileSize, filename);
     }
 
     private void SendFileWithStream(long fileSize, string path)
@@ -82,12 +82,12 @@ public class FileCommsHandler
                 offset += FileUtils.MaxPacketSize;
             }
 
-            _socketHandler.Send(data);
+            _networkHandler.Send(data);
             currentPart++;
         }
     }
 
-    private string ReceiveFileWithStreams(long fileSize, string fileName)
+    private async Task<string> ReceiveFileWithStreams(long fileSize, string fileName)
     {
         long fileParts = FileUtils.CalculateFileParts(fileSize);
         long offset = 0;
@@ -100,12 +100,12 @@ public class FileCommsHandler
             if (currentPart == fileParts)
             {
                 var lastPartSize = (int)(fileSize - offset);
-                data = _socketHandler.Receive(lastPartSize);
+                data = await _networkHandler.Receive(lastPartSize);
                 offset += lastPartSize;
             }
             else
             {
-                data = _socketHandler.Receive(FileUtils.MaxPacketSize);
+                data = await _networkHandler.Receive(FileUtils.MaxPacketSize);
                 offset += FileUtils.MaxPacketSize;
             }
             writePath = _fileStreamHandler.Write(fileName, data);
