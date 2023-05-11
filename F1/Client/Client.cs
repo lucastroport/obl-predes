@@ -17,31 +17,27 @@ internal class Client
     private static readonly object ProcessorLock = new();
     private static readonly object SendFileLock = new();
     private static readonly object ReceiveFileLock = new();
-    static void Main()
+    static async Task Main()
     {
         var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ClientIpConfigKey));
         var serverAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ServerIpConfigKey));
-        ;
+        
         int serverPort = int.Parse(SettingsHelper.ReadSettings(AppConfig.ServerPortConfigKey));
 
-        var client = new Socket(
-            ipAddress.AddressFamily,
-            SocketType.Stream,
-            ProtocolType.Tcp);   
+        var tcpClient = new TcpClient(new IPEndPoint(ipAddress, 0)); 
 
         try
         {
-            ISocketHandler handler;
+            INetworkHandler handler;
             ProtocolProcessor protocolProcessor;
             ProtocolData response;
 
-            client.Bind(new IPEndPoint(ipAddress, 0));
-            client.Connect(new IPEndPoint(serverAddress, serverPort));
+            await tcpClient.ConnectAsync(serverAddress, serverPort);
 
             Console.WriteLine("Connected to server");
             Logger.Info($"Connected to server on {serverAddress} port {serverPort}");
 
-            handler = new SocketHandler(client);
+            handler = new NetworkHandler(tcpClient);
 
             var protocolData = new ProtocolData(
                 true,
@@ -58,10 +54,8 @@ internal class Client
                 $"{serializedQuery}"
             );
 
-            lock (ProcessorLock)
-            {
-                response = protocolProcessor.Process();
-            }
+            response = await protocolProcessor.Process();
+            
             string message = "";
 
             var menu = "";
@@ -99,7 +93,7 @@ internal class Client
                 }
 
                 // Receive and print the server response
-                response = protocolProcessor.Process();
+                response = await protocolProcessor.Process();
 
                 var result = "";
                 var filename = "";
@@ -114,7 +108,7 @@ internal class Client
                 {
                     lock (SendFileLock)
                     {
-                        var fileCommonHandler = new FileCommsHandler(client);
+                        var fileCommonHandler = new FileCommsHandler(tcpClient);
                         response.Query.Fields.TryGetValue(Constants.ConstantKeys.SaveFileKey, out var filePath);
                         fileCommonHandler.SendFile(filePath, response);   
                     }
@@ -123,12 +117,9 @@ internal class Client
                 {
                     if (containsFilename && containsFileSize)
                     {
-                        lock (ReceiveFileLock)
-                        {
-                            var fileCommonHandler = new FileCommsHandler(client);
-                            var writePath = fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
-                            Console.WriteLine($"File downloaded in {writePath}");   
-                        }
+                        var fileCommonHandler = new FileCommsHandler(tcpClient);
+                        var writePath = await fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
+                        Console.WriteLine($"File downloaded in {writePath}");  
                     }
                     
                     if (isMenu || containsResult)
@@ -191,7 +182,8 @@ internal class Client
         catch (Exception e)
         {
             Logger.Error("Exception: {0}", e);
-            client.Close();
+            tcpClient.GetStream().Close();
+            tcpClient.Close();
         }
     }
 }

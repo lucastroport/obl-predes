@@ -3,11 +3,11 @@ namespace F1.Domain.Model;
 public class Part
 {
     public string Id { get; set; }
-    public string Name { get; set; }
-    public string? Supplier { get; set; }
-    public string? Brand { get; set; }
+    public string Name { get; }
+    public string? Supplier { get; }
+    public string? Brand { get; }
     public string? PhotoUrl { get; set; }
-    public IList<PartCategory>? Categories { get; set; }
+    public List<PartCategory>? Categories { get; }
 
     public Part(string name, string supplier, string brand)
     {
@@ -34,5 +34,5 @@ public class Part
         return Id.GetHashCode();
     }
 
-    public override string ToString() => $"({Id}) - Name: {Name} Supplier: {Supplier} Brand: {Brand}";
+    public override string ToString() => $"({Id}) - Name: {Name} Supplier: {Supplier} Brand: {Brand} Categories: {String.Join(", ", Categories)}";
 }

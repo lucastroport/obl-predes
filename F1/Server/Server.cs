@@ -17,11 +17,10 @@ namespace Server;
 
 public class Server
 {
-    private static readonly int MaxClients = 10;
+    private static readonly int BackLog = 100;
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Server));
     private static readonly SettingsHelper SettingsHelper = new();
-    private static Dictionary<Socket, string> _connectedClients = new();
-    private Socket _clientSocket;
+    private static Dictionary<TcpClient, string> _connectedClients = new();
     private static readonly object AuthUserReadLock = new();
     private static readonly object AuthAddLock = new();
     private static readonly object ReadFieldsLock = new();
@@ -32,49 +31,43 @@ public class Server
         XmlConfigurator.Configure();
     }
 
-    static void Main()
+    static async Task Main()
     {
-        // Set the IP address and port for the server
         var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ServerIpConfigKey));
-        int port = int.Parse(SettingsHelper.ReadSettings(AppConfig.ServerPortConfigKey));
+        var port = int.Parse(SettingsHelper.ReadSettings(AppConfig.ServerPortConfigKey));
         var adminPassword = SettingsHelper.ReadSettings(AppConfig.AdminPasswordKey);
         UserRepository.Instance.AddUser(new User("admin", adminPassword, UserType.Admin));
 
-        var socket = new Socket(
-            ipAddress.AddressFamily,
-            SocketType.Stream,
-            ProtocolType.Tcp);
-
+        var tcpClient = new TcpClient();
         try
         {
-            // Bind the listener to the IP address and port
-            socket.Bind(new IPEndPoint(ipAddress, port));
+            var tcpListener = new TcpListener(new IPEndPoint(ipAddress, port));
 
-            // Start listening for incoming client requests
-            socket.Listen(MaxClients);
+            tcpListener.Start(BackLog);
             Console.WriteLine($"Server started in {ipAddress}:{port}. Waiting for connections...");
             Logger.Info($"Server started in {ipAddress}:{port}.");
 
             
-            while (_connectedClients.Count < MaxClients)
+            while (true)
             {
-                var clientSocket = socket.Accept();
-                _connectedClients.Add(clientSocket, "");
+                tcpClient = await tcpListener.AcceptTcpClientAsync();
+                _connectedClients.Add(tcpClient, "");
                 
-                var clientRemoteEndpoint = clientSocket.RemoteEndPoint as IPEndPoint;
+                var clientRemoteEndpoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
 
                 Console.WriteLine(
                     $"Client {clientRemoteEndpoint.Address} connected on port {clientRemoteEndpoint.Port}");
                 Logger.Info($"Client with {clientRemoteEndpoint.Address} ip connected to server");
-                new Thread(() => new ClientHandler(clientSocket).Start()).Start();
+                var clientHandler = new ClientHandler(tcpClient);
+                Task.Run(async () => await clientHandler.Start());
             }
         }
         catch (Exception e)
         {
             Logger.Error("Exception: {0}", e);
-            if (_connectedClients.ContainsKey(socket))
+            if (_connectedClients.ContainsKey(tcpClient))
             {
-                var user = UserRepository.Instance.QueryByUsername(_connectedClients[socket]);
+                var user = UserRepository.Instance.QueryByUsername(_connectedClients[tcpClient]);
                 if (user != null)
                 {
                     user.IsLoggedIn = false;
@@ -84,24 +77,24 @@ public class Server
         }
         finally
         {
-            socket.Shutdown(SocketShutdown.Both);
-            socket.Close();
-            Logger.Info("Socket closed");
+            tcpClient.GetStream().Close();
+            tcpClient.Close();
+            Logger.Info("TcpClient closed");
         }
     }
 
     private class ClientHandler
     {
-        private readonly Socket _socket;
+        private readonly TcpClient _tcpClient;
 
-        public ClientHandler(Socket client)
+        public ClientHandler(TcpClient client)
         {
-            _socket = client;
+            _tcpClient = client;
         }
 
-        public void Start()
+        public async Task Start()
         {
-            var handler = new SocketHandler(_socket);
+            var handler = new NetworkHandler(_tcpClient);
             var protocolProcessor = new ProtocolProcessor(handler);
             var clientConnected = true;
 
@@ -109,7 +102,7 @@ public class Server
             {
                 try
                 {
-                    var protocolData = protocolProcessor.Process();
+                    var protocolData = await protocolProcessor.Process();
                     // Process the data and generate a response
                     bool containsFilename = false;
                     bool containsFileSize = false;
@@ -124,8 +117,8 @@ public class Server
 
                         if (containsFilename && containsFileSize)
                         {
-                            var fileCommonHandler = new FileCommsHandler(_socket);
-                            var writePath = fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
+                            var fileCommonHandler = new FileCommsHandler(_tcpClient);
+                            var writePath = await fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
                             var partRepository = PartRepository.Instance;
                             var part = partRepository.QueryById(partId);
                             if (part != null)
@@ -156,12 +149,12 @@ public class Server
 
                     if (!containsFilename && !containsFileSize)
                     {
-                        ProcessData(protocolProcessor, protocolData, _socket);
+                        ProcessData(protocolProcessor, protocolData, _tcpClient);
                     }
                 }
                 catch (Exception e)
                 {
-                    var user = UserRepository.Instance.QueryByUsername(_connectedClients[_socket]);
+                    var user = UserRepository.Instance.QueryByUsername(_connectedClients[_tcpClient]);
                     if (user != null)
                     {
                         user.IsLoggedIn = false;
@@ -172,22 +165,22 @@ public class Server
                 }
             }
         }
-        private static bool IsClientAuthenticated(Socket socket)
+        private static bool IsClientAuthenticated(TcpClient tcpClient)
         {
-            var containsClient = _connectedClients.TryGetValue(socket, out var username);
+            var containsClient = _connectedClients.TryGetValue(tcpClient, out var username);
             return containsClient && !string.IsNullOrEmpty(username);
         }
-        private static void ProcessData(ProtocolProcessor processor, ProtocolData data, Socket socket)
+        private static void ProcessData(ProtocolProcessor processor, ProtocolData data, TcpClient tcpClient)
         {
             var menu = new Menu();
             var operationHandler = new OperationHandler();
 
-            if (IsClientAuthenticated(socket))
+            if (IsClientAuthenticated(tcpClient))
             {
                 menu.TriggerLoggedInMenu();
                 if (data.Query != null)
                 {
-                    var loggedUser = _connectedClients[socket];
+                    var loggedUser = _connectedClients[tcpClient];
                     data.Query.Fields.Add(ConstantKeys.Authenticated, loggedUser);
                 }
             }
@@ -199,8 +192,8 @@ public class Server
             string connectedClient;
             lock (AuthUserReadLock)
             {
-                connectedClient = _connectedClients.ContainsKey(socket)
-                    ? _connectedClients[socket]
+                connectedClient = _connectedClients.TryGetValue(tcpClient, out var client)
+                    ? client
                     : "";
             }
             var response = operationHandler
@@ -227,7 +220,7 @@ public class Server
             {
                 lock (SendFileLock)
                 {
-                    var fileCommonHandler = new FileCommsHandler(socket);
+                    var fileCommonHandler = new FileCommsHandler(tcpClient);
                     fileCommonHandler.SendFile(fileUrl, response);   
                 }
             }
@@ -235,14 +228,14 @@ public class Server
             {
                 if (isLogout)
                 {
-                    if (_connectedClients.ContainsKey(socket))
+                    if (_connectedClients.ContainsKey(tcpClient))
                     {
-                        var user = UserRepository.Instance.QueryByUsername(_connectedClients[socket]);
+                        var user = UserRepository.Instance.QueryByUsername(_connectedClients[tcpClient]);
                         if (user != null)
                         {
                             user.IsLoggedIn = false;
                         }
-                        _connectedClients.Remove(socket);
+                        _connectedClients.Remove(tcpClient);
                     }
                 }
 
@@ -250,14 +243,7 @@ public class Server
                 {
                     if (userAuthenticated)
                     {
-                        if (_connectedClients.ContainsKey(socket))
-                        {
-                            _connectedClients[socket] = username;
-                        }
-                        else
-                        {
-                            _connectedClients.Add(socket, username);
-                        }
+                        _connectedClients[tcpClient] = username;
                     }   
                 }
 

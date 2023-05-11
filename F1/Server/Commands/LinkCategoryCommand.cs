@@ -92,9 +92,16 @@ public class LinkCategoryCommand : ICommand
         {
             lock (AddCategoryLock)
             {
-                foundPart.Categories.Add(foundCategory);   
+                if (!foundPart.Categories.Contains(foundCategory))
+                {
+                    foundPart.Categories.Add(foundCategory); 
+                    resultMessage = $"{foundCategory.Name} category linked to {foundPart.Name}";
+                }
+                else
+                {
+                    resultMessage = $"ERROR: {foundCategory.Name} category already has the {foundPart.Name} category";
+                }  
             }
-            resultMessage = $"{foundCategory.Name} category linked to {foundPart.Name}";
         }
         
         cmdQuery = new CommandQuery(
