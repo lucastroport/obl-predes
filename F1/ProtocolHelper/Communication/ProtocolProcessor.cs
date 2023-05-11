@@ -19,7 +19,6 @@ public class ProtocolProcessor
         var headerLength = ProtocolData.HeaderMaxLength;
         _handler.Receive(headerLength+1);
         var header = await _handler.Receive(headerLength);
-        var parsedHeader = ParseResponse(header);
         var bytesRead = header.Length;
 
         // Receive the operation from the client
