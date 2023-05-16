@@ -12,6 +12,7 @@ namespace F1.Presentation.Views.Menu
             new(MenuItemConstants.AddUser, "Add user", new[] { UserType.Admin }, true),
             new(MenuItemConstants.Parts, "Parts", new[] { UserType.Admin, UserType.Mechanic }),
             new(MenuItemConstants.Messages, "Messages", new[] { UserType.Admin, UserType.Mechanic }, true),
+            new(MenuItemConstants.LoadTestData, "Load Test Data", new[] { UserType.Admin }),
             new(MenuItemConstants.LogOut, "Exit/LogOut", new[] { UserType.Admin, UserType.Mechanic }, true)
         };
 

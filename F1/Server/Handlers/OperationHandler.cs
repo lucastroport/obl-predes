@@ -27,6 +27,7 @@ public class OperationHandler
                 { MenuItemConstants.UnreadMessages, new UnreadMessagesCommand() },
                 { MenuItemConstants.History, new MessageHistoryCommand() },
                 { MenuItemConstants.MainMenu, new MainMenuCommand() },
+                { MenuItemConstants.LoadTestData, new LoadTestDataCommand() },
             };
         }
 
