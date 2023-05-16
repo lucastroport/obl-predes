@@ -14,9 +14,7 @@ internal class Client
 {
     private static readonly SettingsHelper SettingsHelper = new();
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Client));
-    private static readonly object ProcessorLock = new();
     private static readonly object SendFileLock = new();
-    private static readonly object ReceiveFileLock = new();
     static async Task Main()
     {
         var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ClientIpConfigKey));
@@ -74,7 +72,18 @@ internal class Client
             {
                 if (!waitingResponse)
                 {
-                    message = Console.ReadLine();
+                    var correct = false;
+                    while (!correct)
+                    {
+                        message = Console.ReadLine();
+                        var parsed = int.TryParse(message, out var numOp);
+                        correct = parsed && numOp is >= 0 and <= 99;
+                        if (!correct)
+                        {
+                            Console.WriteLine("Please enter a valid number option.");
+                            Console.WriteLine(menu);
+                        }
+                    }
 
                     protocolData = new ProtocolData(
                         true,
@@ -181,9 +190,10 @@ internal class Client
         }
         catch (Exception e)
         {
-            Logger.Error("Exception: {0}", e);
             tcpClient.GetStream().Close();
             tcpClient.Close();
+            
+            Logger.Error("Exception: {0}", e);
         }
     }
 }

@@ -27,14 +27,16 @@ namespace F1.Presentation.Views.Menu
             new(MenuItemConstants.DownloadPartPicture, "Search for products to download picture",
                 new[] { UserType.Admin, UserType.Mechanic }, true),
             new(MenuItemConstants.SearchPartByName, "Search part by name", new[] { UserType.Admin, UserType.Mechanic },
-                true)
+                true),
+            new(MenuItemConstants.MainMenu, "Main Menu", new[] { UserType.Admin, UserType.Mechanic })
         };
 
         public static List<MenuItem> MessagesMenuItems = new()
         {
             new(MenuItemConstants.SendMessage, "Send Message", new[] { UserType.Admin, UserType.Mechanic }),
             new(MenuItemConstants.UnreadMessages, "Unread messages", new[] { UserType.Admin, UserType.Mechanic }),
-            new(MenuItemConstants.History, "History", new[] { UserType.Admin, UserType.Mechanic }, true)
+            new(MenuItemConstants.History, "History", new[] { UserType.Admin, UserType.Mechanic }, true),
+            new(MenuItemConstants.MainMenu, "Main Menu", new[] { UserType.Admin, UserType.Mechanic })
         };
 
         public static string ListItems(List<MenuItem> items)

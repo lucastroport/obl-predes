@@ -25,8 +25,6 @@ public class Menu
         return sb.ToString();
     }
 
-    public MenuItem GetMenu(int menuId) => _menuItems.First(m => m.Id == menuId);
-
     public void TriggerLoggedInMenu()
     {
         _menuItems.ForEach(item => { item.Enabled = item.Id != MenuItemConstants.LogIn; });
