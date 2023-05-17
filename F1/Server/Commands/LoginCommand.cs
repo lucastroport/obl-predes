@@ -53,7 +53,7 @@ public class LoginCommand : ICommand
                     cmdQuery = new CommandQuery(
                         new Dictionary<string, string>
                         {
-                            {"RESULT", $"You user is currently logged in another device, please log out on the device before logging in here."},
+                            {"RESULT", "You user is currently logged in another device, please log out on the device before logging in here."},
                             {"MENU", $"{menu}"}
                         }
                     );

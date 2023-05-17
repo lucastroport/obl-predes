@@ -27,7 +27,7 @@ public class AddUserCommand : ICommand
         query.Fields.TryGetValue(ConstantKeys.UsernameKey, out var username);
         query.Fields.TryGetValue(ConstantKeys.PasswordKey, out var password);
 
-        User? authenticatedUser = null;
+        User? authenticatedUser;
         bool userExists;
         
         lock (UserQueryLock)

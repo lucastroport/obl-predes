@@ -55,7 +55,7 @@ public class ProtocolData
                 return PrependZeros(operation, length);
             }
         }
-        throw new ArgumentException($"Value is not allowed ${operation}");
+        throw new ArgumentException($"Value is not allowed: {operation} must be between {min} and {max}");
     }
     
     private string PrependZeros(string numberString, int allowedLength)

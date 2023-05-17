@@ -21,6 +21,8 @@ public class Server
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Server));
     private static readonly SettingsHelper SettingsHelper = new();
     private static Dictionary<TcpClient, string> _connectedClients = new();
+    private static List<int> _availableOptions = new() { MenuItemConstants.MainMenu };
+    private static string _currentMenu = "";
     private static readonly object AuthUserReadLock = new();
     private static readonly object AuthAddLock = new();
     private static readonly object ReadFieldsLock = new();
@@ -47,12 +49,12 @@ public class Server
             Console.WriteLine($"Server started in {ipAddress}:{port}. Waiting for connections...");
             Logger.Info($"Server started in {ipAddress}:{port}.");
 
-            
+
             while (true)
             {
                 tcpClient = await tcpListener.AcceptTcpClientAsync();
                 _connectedClients.Add(tcpClient, "");
-                
+
                 var clientRemoteEndpoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
 
                 Console.WriteLine(
@@ -73,6 +75,7 @@ public class Server
                     user.IsLoggedIn = false;
                 }
             }
+
             Console.WriteLine("Client disconnected");
         }
         finally
@@ -159,22 +162,25 @@ public class Server
                     {
                         user.IsLoggedIn = false;
                     }
+
                     clientConnected = false;
                     Logger.Error("Exception:", e);
                     Console.WriteLine("Client disconnected");
                 }
             }
         }
+
         private static bool IsClientAuthenticated(TcpClient tcpClient)
         {
             var containsClient = _connectedClients.TryGetValue(tcpClient, out var username);
             return containsClient && !string.IsNullOrEmpty(username);
         }
+
         private static void ProcessData(ProtocolProcessor processor, ProtocolData data, TcpClient tcpClient)
         {
             var menu = new Menu();
-            var operationHandler = new OperationHandler();
-
+            var ack = "";
+            
             if (IsClientAuthenticated(tcpClient))
             {
                 menu.TriggerLoggedInMenu();
@@ -196,63 +202,113 @@ public class Server
                     ? client
                     : "";
             }
-            var response = operationHandler
-                .HandleMenuAction(
-                    int.Parse(data.Operation),
-                    data.Query != null ? new CommandQuery(data.Query.Fields) : null,
-                    menu,
-                    connectedClient
-                );
-            bool userAuthenticated;
-            bool isLogout;
-            bool isSendFile;
-            string fileUrl;
-            string username;
-            
-            lock (ReadFieldsLock)
+
+            var operationHandler = new OperationHandler();
+            var operationParsed = int.TryParse(data.Operation, out var operation);
+
+            if (operationParsed && _availableOptions.Contains(operation))
             {
-                userAuthenticated = response.Query.Fields.TryGetValue(ConstantKeys.Authenticated, out username);
-                isLogout = response.Query.Fields.ContainsKey(ConstantKeys.Logout);
-                isSendFile = response.Query.Fields.TryGetValue(ConstantKeys.SendFileUrlKey, out fileUrl);
-    
-            }
-            if (isSendFile)
-            {
-                lock (SendFileLock)
+                var response = operationHandler
+                    .HandleMenuAction(
+                        int.Parse(data.Operation),
+                        data.Query != null ? new CommandQuery(data.Query.Fields) : null,
+                        menu,
+                        connectedClient
+                    );
+                bool userAuthenticated;
+                bool isLogout;
+                bool isSendFile;
+                string fileUrl;
+                string username;
+
+                lock (ReadFieldsLock)
                 {
-                    var fileCommonHandler = new FileCommsHandler(tcpClient);
-                    fileCommonHandler.SendFile(fileUrl, response);   
+                    userAuthenticated = response.Query.Fields.TryGetValue(ConstantKeys.Authenticated, out username);
+                    isLogout = response.Query.Fields.ContainsKey(ConstantKeys.Logout);
+                    isSendFile = response.Query.Fields.TryGetValue(ConstantKeys.SendFileUrlKey, out fileUrl);
+                }
+
+                if (isSendFile)
+                {
+                    lock (SendFileLock)
+                    {
+                        var fileCommonHandler = new FileCommsHandler(tcpClient);
+                        fileCommonHandler.SendFile(fileUrl, response);
+                    }
+                }
+                else
+                {
+                    if (isLogout)
+                    {
+                        if (_connectedClients.ContainsKey(tcpClient))
+                        {
+                            var user = UserRepository.Instance.QueryByUsername(_connectedClients[tcpClient]);
+                            if (user != null)
+                            {
+                                user.IsLoggedIn = false;
+                            }
+
+                            _connectedClients.Remove(tcpClient);
+                        }
+                    }
+
+                    lock (AuthAddLock)
+                    {
+                        if (userAuthenticated)
+                        {
+                            _connectedClients[tcpClient] = username;
+                        }
+                    }
+
+                    if (response.Query != null)
+                    {
+                        var isMenu = response.Query.Fields.TryGetValue("MENU", out _currentMenu);
+                        if (isMenu)
+                        {
+                            _availableOptions = new();
+                            var lines = _currentMenu?.Split("\n");
+                            foreach (var line in lines)
+                            {
+                                if (!String.IsNullOrEmpty(line))
+                                {
+                                    var option = line.Split('-')[0];
+                                    var parseSuccess = int.TryParse(option, out var numOption);
+                                    if (parseSuccess)
+                                    {
+                                        _availableOptions.Add(numOption);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ack = $"{response.Header}" +
+                              $"{response.Operation}" +
+                              response.QueryLength +
+                              $"{QueryDataSerializer.Serialize(response.Query)}";
                 }
             }
             else
             {
-                if (isLogout)
-                {
-                    if (_connectedClients.ContainsKey(tcpClient))
+                var error = new ProtocolData(
+                    false,
+                    $"{operation}",
+                    new QueryData
                     {
-                        var user = UserRepository.Instance.QueryByUsername(_connectedClients[tcpClient]);
-                        if (user != null)
+                        Fields = new Dictionary<string, string>
                         {
-                            user.IsLoggedIn = false;
+                            { "RESULT", $"ERROR: You must select one of these operations: {String.Join(", ",_availableOptions)}" },
+                            { "MENU", _currentMenu}
                         }
-                        _connectedClients.Remove(tcpClient);
                     }
-                }
-
-                lock (AuthAddLock)
-                {
-                    if (userAuthenticated)
-                    {
-                        _connectedClients[tcpClient] = username;
-                    }   
-                }
-
-                var ack = $"{response.Header}" +
-                          $"{response.Operation}" +
-                          response.QueryLength +
-                          $"{QueryDataSerializer.Serialize(response.Query)}";
-                processor.Send(ack);
+                );
+                
+                ack = $"{error.Header}" +
+                          $"{error.Operation}" +
+                          error.QueryLength +
+                          $"{QueryDataSerializer.Serialize(error.Query)}";
             }
+            processor.Send(ack);
         }
     }
 }

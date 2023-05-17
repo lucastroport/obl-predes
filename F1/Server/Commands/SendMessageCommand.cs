@@ -33,12 +33,38 @@ public class SendMessageCommand : ICommand
                 users = _userRepository.GetAllMechanicUsers().FindAll(u => !u.Username.Equals(authUsername));
             }
             
-            cmdQuery = new CommandQuery(new Dictionary<string, string>
+            if (authenticatedUser is { Type: UserType.Admin })
             {
-                {ConstantKeys.SelectUserKey, $"{users.Aggregate("", (menuString, item) => menuString + item + "\n")}"},
-                {ConstantKeys.SendMessageKey, "Enter"}
+                cmdQuery = new CommandQuery(
+                    new Dictionary<string, string>
+                    {
+                        {"RESULT", "ERROR: Messaging is only between mechanics"},
+                        {"MENU", $"{menu}"}
+                    }
+                );
+            }
+            else
+            {
+                if (users.Count == 0)
+                {
+                    cmdQuery  = new CommandQuery(
+                        new Dictionary<string, string>
+                        {
+                            {"RESULT", "There are no users to send a message to"},
+                            {"MENU", $"{menu}"}
+                        }
+                    );
+                }
+                else
+                {
+                    cmdQuery = new CommandQuery(new Dictionary<string, string>
+                    {
+                        {ConstantKeys.SelectUserKey, $"{users.Aggregate("", (menuString, item) => menuString + item + "\n")}"},
+                        {ConstantKeys.SendMessageKey, "Enter"}
                 
-            });
+                    }); 
+                }   
+            }
             return new CommandResult(cmdQuery);
         }
         
@@ -51,45 +77,33 @@ public class SendMessageCommand : ICommand
             userToSend = _userRepository.QueryUserById(userId);   
         }
 
-        if (authenticatedUser is { Type: UserType.Admin })
+        if (userToSend is { Type: UserType.Mechanic })
         {
+            lock (AddMessageLock)
+            {
+                var messageToAdd = new Message(message, authenticatedUser.Id, userId );
+                _messageRepository.AddMessage(messageToAdd);
+            }
+
             cmdQuery = new CommandQuery(
                 new Dictionary<string, string>
                 {
-                    {"RESULT", "ERROR: Messaging is only between mechanics"},
+                    {"RESULT", "Message sent !"},
                     {"MENU", $"{menu}"}
                 }
             );
         }
         else
         {
-            if (userToSend is { Type: UserType.Mechanic })
-            {
-                lock (AddMessageLock)
+            cmdQuery = new CommandQuery(
+                new Dictionary<string, string>
                 {
-                    var messageToAdd = new Message(message, authenticatedUser.Id, userId );
-                    _messageRepository.AddMessage(messageToAdd);
+                    {"RESULT", "ERROR: User entered not valid."},
+                    {"MENU", $"{menu}"}
                 }
-
-                cmdQuery = new CommandQuery(
-                    new Dictionary<string, string>
-                    {
-                        {"RESULT", "Message sent !"},
-                        {"MENU", $"{menu}"}
-                    }
-                );
-            }
-            else
-            {
-                cmdQuery = new CommandQuery(
-                    new Dictionary<string, string>
-                    {
-                        {"RESULT", "ERROR: User entered not valid."},
-                        {"MENU", $"{menu}"}
-                    }
-                );
-            }
+            );
         }
+        
         return new CommandResult(cmdQuery);
     }
 }

@@ -34,5 +34,5 @@ public class Part
         return Id.GetHashCode();
     }
 
-    public override string ToString() => $"({Id}) - Name: {Name} Supplier: {Supplier} Brand: {Brand} Categories: {String.Join(", ", Categories)}";
+    public override string ToString() => $"({Id}) - Name: {Name} Supplier: {Supplier} Brand: {Brand} Categories: ({String.Join(", ", Categories.Select(c => c.Name))})";
 }

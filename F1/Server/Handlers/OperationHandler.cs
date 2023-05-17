@@ -8,10 +8,9 @@ namespace Server.Handlers;
 public class OperationHandler
     {
         private readonly Dictionary<int, ICommand> commandMap;
-
         public OperationHandler()
         {
-            commandMap = new Dictionary<int, ICommand>
+            commandMap = new ()
             {
                 { MenuItemConstants.LogIn, new LoginCommand() },
                 { MenuItemConstants.AddUser, new AddUserCommand() },
@@ -26,23 +25,14 @@ public class OperationHandler
                 { MenuItemConstants.Messages, new MessagesCommand() },
                 { MenuItemConstants.SendMessage, new SendMessageCommand() },
                 { MenuItemConstants.UnreadMessages, new UnreadMessagesCommand() },
-                { MenuItemConstants.History, new MessageHistoryCommand() }
+                { MenuItemConstants.History, new MessageHistoryCommand() },
+                { MenuItemConstants.MainMenu, new MainMenuCommand() },
+                { MenuItemConstants.LoadTestData, new LoadTestDataCommand() },
             };
         }
 
         public ProtocolData HandleMenuAction(int operation, CommandQuery? query, Menu menu, string? authUsername)
         {
-            if (query == null && operation == 0)
-            {
-                return new ProtocolData(
-                    false,
-                    $"{operation}",
-                    new QueryData
-                    {
-                        Fields = new Dictionary<string, string>{ {"MENU", $"{menu}"} }
-                    }
-                );
-            }
             return HandleCommand(operation, query, menu, authUsername);
         }
 
@@ -50,8 +40,20 @@ public class OperationHandler
         {
             if (commandMap.TryGetValue(operation, out ICommand command))
             {
-                var result = command.Execute(query, menu, authUsername);
+                if (query == null && operation == 0)
+                {
+                    return new ProtocolData(
+                        false,
+                        $"{operation}",
+                        new QueryData
+                        {
+                            Fields = new Dictionary<string, string>{ {"MENU", $"{menu}"} }
+                        }
+                    );
+                }
                 
+                var result = command.Execute(query, menu, authUsername);
+                    
                 return new ProtocolData(
                     false,
                     $"{operation}",
@@ -59,14 +61,14 @@ public class OperationHandler
                     {
                         Fields = result.CommandQuery.Fields
                     }
-                );
+                );  
             }
             return new ProtocolData(
                 false,
                 $"{operation}",
                 new QueryData
                 {
-                    Fields = new Dictionary<string, string>{ {"RESULT",$"Invalid operation {operation}"} }
+                    Fields = new Dictionary<string, string>{ {"RESULT",$"ERROR: Invalid operation {operation}"} }
                 }
             );
         }
