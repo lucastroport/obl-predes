@@ -21,7 +21,7 @@ public class Server
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Server));
     private static readonly SettingsHelper SettingsHelper = new();
     private static Dictionary<TcpClient, string> _connectedClients = new();
-    private static List<int> _availableOptions = new() { MenuItemConstants.MainMenu };
+    private static Dictionary<TcpClient, List<int>> _availableOptions = new();
     private static string _currentMenu = "";
     private static readonly object AuthUserReadLock = new();
     private static readonly object AuthAddLock = new();
@@ -54,7 +54,7 @@ public class Server
             {
                 tcpClient = await tcpListener.AcceptTcpClientAsync();
                 _connectedClients.Add(tcpClient, "");
-
+                _availableOptions.Add(tcpClient, new List<int> { MenuItemConstants.MainMenu });
                 var clientRemoteEndpoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
 
                 Console.WriteLine(
@@ -205,8 +205,9 @@ public class Server
 
             var operationHandler = new OperationHandler();
             var operationParsed = int.TryParse(data.Operation, out var operation);
-
-            if (operationParsed && _availableOptions.Contains(operation))
+            var getClientOptionsSuccess = _availableOptions.TryGetValue(tcpClient, out var clientOptions);
+            
+            if (operationParsed && getClientOptionsSuccess && clientOptions.Contains(operation))
             {
                 var response = operationHandler
                     .HandleMenuAction(
@@ -265,7 +266,7 @@ public class Server
                         var isMenu = response.Query.Fields.TryGetValue("MENU", out _currentMenu);
                         if (isMenu)
                         {
-                            _availableOptions = new();
+                            _availableOptions[tcpClient] = new();
                             var lines = _currentMenu?.Split("\n");
                             foreach (var line in lines)
                             {
@@ -275,7 +276,7 @@ public class Server
                                     var parseSuccess = int.TryParse(option, out var numOption);
                                     if (parseSuccess)
                                     {
-                                        _availableOptions.Add(numOption);
+                                        _availableOptions[tcpClient].Add(numOption);
                                     }
                                 }
                             }
@@ -297,7 +298,7 @@ public class Server
                     {
                         Fields = new Dictionary<string, string>
                         {
-                            { "RESULT", $"ERROR: You must select one of these operations: {String.Join(", ",_availableOptions)}" },
+                            { "RESULT", $"ERROR: You must select one of these operations: {String.Join(", ",_availableOptions[tcpClient])}" },
                             { "MENU", _currentMenu}
                         }
                     }
