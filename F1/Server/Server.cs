@@ -142,6 +142,9 @@ public class Server
                                     }
                                 }
                             );
+                            _currentMenu = MenuOptions.ListItems(MenuOptions.MenuItems);
+                            ResetUserOptions(_tcpClient);
+                            
                             protocolProcessor.Send(
                                 $"{response.Header}" +
                                 $"{response.Operation}" +
@@ -267,20 +270,7 @@ public class Server
                         var isMenu = response.Query.Fields.TryGetValue("MENU", out _currentMenu);
                         if (isMenu)
                         {
-                            _availableOptions[tcpClient] = new();
-                            var lines = _currentMenu?.Split("\n");
-                            foreach (var line in lines)
-                            {
-                                if (!String.IsNullOrEmpty(line))
-                                {
-                                    var option = line.Split('-')[0];
-                                    var parseSuccess = int.TryParse(option, out var numOption);
-                                    if (parseSuccess)
-                                    {
-                                        _availableOptions[tcpClient].Add(numOption);
-                                    }
-                                }
-                            }
+                            ResetUserOptions(tcpClient);
                         }
                     }
 
@@ -311,6 +301,24 @@ public class Server
                           $"{QueryDataSerializer.Serialize(error.Query)}";
             }
             processor.Send(ack);
+        }
+
+        private static void ResetUserOptions(TcpClient tcpClient)
+        {
+            _availableOptions[tcpClient] = new();
+            var lines = _currentMenu?.Split("\n");
+            foreach (var line in lines)
+            {
+                if (!String.IsNullOrEmpty(line))
+                {
+                    var option = line.Split('-')[0];
+                    var parseSuccess = int.TryParse(option, out var numOption);
+                    if (parseSuccess)
+                    {
+                        _availableOptions[tcpClient].Add(numOption);
+                    }
+                }
+            }
         }
     }
 }
