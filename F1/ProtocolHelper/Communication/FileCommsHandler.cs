@@ -12,11 +12,11 @@ public class FileCommsHandler
     private readonly ProtocolProcessor _protocolProcessor;
     private readonly INetworkHandler _networkHandler;
 
-    public FileCommsHandler(TcpClient socket)
+    public FileCommsHandler(TcpClient tcpClient)
     {
         _fileHandler = new FileHandler.FileHandler();
         _fileStreamHandler = new FileStreamHandler();
-        _networkHandler = new NetworkHandler(socket);
+        _networkHandler = new NetworkHandler(tcpClient);
         _protocolProcessor = new ProtocolProcessor(_networkHandler);
     }
 
