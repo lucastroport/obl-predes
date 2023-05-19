@@ -6,11 +6,15 @@ public static class TestData
 {
     public static List<Part> GetDummyParts()
     {
+        var withCategories = new Part("Paint", "BMW", "ZX789");
+        withCategories.Categories.Add(new PartCategory("Customization"));
+        withCategories.Categories.Add(new PartCategory("Paints"));
+        
         return new ()
         {
+            withCategories,
             new Part("Engine", "Toyota", "BXZ1"),
             new Part("Wheel", "Ford", "AC123"),
-            new Part("Paint", "BMW", "ZX789"),
             new Part("Brake", "Honda", "Fusion"),
             new Part("Transmission", "Chevrolet", "XYZ456")
         };
@@ -24,7 +28,8 @@ public static class TestData
             new PartCategory("Wheels"),
             new PartCategory("Paints"),
             new PartCategory("Brakes"),
-            new PartCategory("Transmissions")
+            new PartCategory("Transmissions"),
+            new PartCategory("Customization")
         };
     }
     

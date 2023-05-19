@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using F1;
 using log4net;
 using ProtocolHelper;

@@ -7,7 +7,7 @@ public class Part
     public string? Supplier { get; }
     public string? Brand { get; }
     public string? PhotoUrl { get; set; }
-    public List<PartCategory>? Categories { get; }
+    public List<PartCategory> Categories { get; }
 
     public Part(string name, string supplier, string brand)
     {

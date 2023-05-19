@@ -99,7 +99,7 @@ public class LinkCategoryCommand : ICommand
                 }
                 else
                 {
-                    resultMessage = $"ERROR: {foundCategory.Name} category already has the {foundPart.Name} category";
+                    resultMessage = $"ERROR: {foundPart.Name} already has the {foundCategory.Name} category";
                 }  
             }
         }

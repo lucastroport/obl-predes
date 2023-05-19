@@ -74,6 +74,7 @@ public class Server
                 {
                     user.IsLoggedIn = false;
                 }
+                _connectedClients.Remove(tcpClient);
             }
 
             Console.WriteLine("Client disconnected");
@@ -162,7 +163,7 @@ public class Server
                     {
                         user.IsLoggedIn = false;
                     }
-
+                    
                     clientConnected = false;
                     Logger.Error("Exception:", e);
                     Console.WriteLine("Client disconnected");
