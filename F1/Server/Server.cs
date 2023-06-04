@@ -12,6 +12,7 @@ using ProtocolHelper.Communication;
 using ProtocolHelper.Communication.Models;
 using Server.Commands;
 using Server.Handlers;
+using Server.Logging;
 
 namespace Server;
 
@@ -27,6 +28,7 @@ public class Server
     private static readonly object AuthAddLock = new();
     private static readonly object ReadFieldsLock = new();
     private static readonly object SendFileLock = new();
+    private static RabbitMQLogger rabbitMqLogger;
 
     static Server()
     {
@@ -35,6 +37,11 @@ public class Server
 
     static async Task Main()
     {
+        rabbitMqLogger = new RabbitMQLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
         var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ServerIpConfigKey));
         var port = int.Parse(SettingsHelper.ReadSettings(AppConfig.ServerPortConfigKey));
         var adminPassword = SettingsHelper.ReadSettings(AppConfig.AdminPasswordKey);
@@ -48,8 +55,8 @@ public class Server
             tcpListener.Start(BackLog);
             Console.WriteLine($"Server started in {ipAddress}:{port}. Waiting for connections...");
             Logger.Info($"Server started in {ipAddress}:{port}.");
-
-
+            rabbitMqLogger.Log($"Server started in {ipAddress}:{port}. Waiting for connections...");
+            
             while (true)
             {
                 tcpClient = await tcpListener.AcceptTcpClientAsync();
@@ -60,6 +67,7 @@ public class Server
                 Console.WriteLine(
                     $"Client {clientRemoteEndpoint.Address} connected on port {clientRemoteEndpoint.Port}");
                 Logger.Info($"Client with {clientRemoteEndpoint.Address} ip connected to server");
+                rabbitMqLogger.Log($"Client with {clientRemoteEndpoint.Address} ip connected to server");
                 var clientHandler = new ClientHandler(tcpClient);
                 Task.Run(async () => await clientHandler.Start());
             }
