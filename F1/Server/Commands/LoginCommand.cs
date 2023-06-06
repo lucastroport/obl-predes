@@ -3,16 +3,24 @@ using F1.Constants;
 using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
+using Server.Logging;
 
 namespace Server.Commands;
 
 public class LoginCommand : ICommand
 {
+    private RabbitMqLogger rabbitMqLogger;
     private IUserRepository _userRepository;
     private static readonly object QueryByUsernameLock = new();
     private static readonly object AuthAddUsernameLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
+        rabbitMqLogger = new RabbitMqLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
+        
         CommandQuery? cmdQuery;
         if (query == null)
         {
@@ -46,7 +54,8 @@ public class LoginCommand : ICommand
                 {
                     foundUser.IsLoggedIn = true;
                     resultMessage = "Login successful";
-                    menu.TriggerLoggedInMenu();   
+                    menu.TriggerLoggedInMenu();
+                    rabbitMqLogger.LogInfo($" (USER: {foundUser.Username}) Login successful");
                 }
                 else
                 {
@@ -57,6 +66,8 @@ public class LoginCommand : ICommand
                             {"MENU", $"{menu}"}
                         }
                     );
+                    rabbitMqLogger.LogClientError($" (USER: {authUsername}) You user is currently logged in another device, please log out on the device before logging in here.");
+                    rabbitMqLogger.Dispose();
                     return new CommandResult(cmdQuery);
                 }
             }
@@ -75,6 +86,11 @@ public class LoginCommand : ICommand
                 cmdQuery.Fields.Add("AUTHENTICATED", foundUser.Username);   
             }
         }
+        else
+        {
+            rabbitMqLogger.LogClientError($" (USER: {authUsername}) User or password incorrect");
+        }
+        rabbitMqLogger.Dispose();
         return new CommandResult(cmdQuery);
     }
 }

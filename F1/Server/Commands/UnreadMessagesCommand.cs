@@ -2,17 +2,25 @@ using F1.Domain.Comparator;
 using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
+using Server.Logging;
 
 namespace Server.Commands;
 
 public class UnreadMessagesCommand : ICommand
 {
+    private RabbitMqLogger rabbitMqLogger;
     private IMessageRepository _messageRepository;
     private IUserRepository _userRepository;
     private static readonly object QueryLock = new();
     
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername = null)
     {
+        rabbitMqLogger = new RabbitMqLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
+        
         CommandQuery? cmdQuery;
         _messageRepository = MessageRepository.Instance;
         _userRepository = UserRepository.Instance;
@@ -34,6 +42,7 @@ public class UnreadMessagesCommand : ICommand
             var unreadMessages = $"\n{messages.Aggregate("", (menuString, item) => menuString + item + "\n")}";
             messages.ForEach(m => m.Seen = true);
             
+            rabbitMqLogger.LogInfo($" (USER: {authUsername}) Unread messages retrieved.");
             cmdQuery = new CommandQuery(
                 new Dictionary<string, string>
                 {
@@ -41,9 +50,11 @@ public class UnreadMessagesCommand : ICommand
                     {"MENU", $"{menu}"},
                 }
             );
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
             
         }
+        rabbitMqLogger.LogInfo($" (USER: {authUsername}) No unread messages.");
         cmdQuery = new CommandQuery(
             new Dictionary<string, string>
             {
@@ -51,6 +62,7 @@ public class UnreadMessagesCommand : ICommand
                 {"MENU", $"{menu}"},
             }
         );
+        rabbitMqLogger.Dispose();
         return new CommandResult(cmdQuery);
     }
 }

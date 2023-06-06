@@ -1,14 +1,22 @@
 using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
+using Server.Logging;
 
 namespace Server.Commands;
 
 public class LoadTestDataCommand : ICommand
 {
+    private RabbitMqLogger rabbitMqLogger;
     private static readonly object QueryByUsernameLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername = null)
     {
+        rabbitMqLogger = new RabbitMqLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
+        
         User? authenticatedUser;
         CommandQuery? cmdQuery;
         
@@ -26,6 +34,8 @@ public class LoadTestDataCommand : ICommand
                     {"MENU", $"{menu}"}
                 }
             );
+            rabbitMqLogger.LogClientError($" (USER: {authUsername}) Test Data is available for Admin users.");
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
         }
         
@@ -49,6 +59,7 @@ public class LoadTestDataCommand : ICommand
                 }
             );
             cache.StoreConfig(Constants.FLAG_TEST_DATA_LOADED, true);
+            rabbitMqLogger.LogInfo($" (USER: {authUsername}) Test Data Loaded Correctly !");
         }
         else
         {
@@ -59,7 +70,9 @@ public class LoadTestDataCommand : ICommand
                     {"RESULT", "Test data has been already loaded"}
                 }
             );
+            rabbitMqLogger.LogInfo($" (USER: {authUsername}) Test data has been already loaded");
         }
+        rabbitMqLogger.Dispose();
         return new CommandResult(cmdQuery);
     }
 }

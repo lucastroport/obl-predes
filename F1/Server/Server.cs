@@ -12,6 +12,7 @@ using ProtocolHelper.Communication;
 using ProtocolHelper.Communication.Models;
 using Server.Commands;
 using Server.Handlers;
+using Server.Logging;
 
 namespace Server;
 
@@ -27,6 +28,7 @@ public class Server
     private static readonly object AuthAddLock = new();
     private static readonly object ReadFieldsLock = new();
     private static readonly object SendFileLock = new();
+    private static RabbitMqLogger rabbitMqLogger;
 
     static Server()
     {
@@ -35,6 +37,11 @@ public class Server
 
     static async Task Main()
     {
+        rabbitMqLogger = new RabbitMqLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
         var ipAddress = IPAddress.Parse(SettingsHelper.ReadSettings(AppConfig.ServerIpConfigKey));
         var port = int.Parse(SettingsHelper.ReadSettings(AppConfig.ServerPortConfigKey));
         var adminPassword = SettingsHelper.ReadSettings(AppConfig.AdminPasswordKey);
@@ -48,8 +55,8 @@ public class Server
             tcpListener.Start(BackLog);
             Console.WriteLine($"Server started in {ipAddress}:{port}. Waiting for connections...");
             Logger.Info($"Server started in {ipAddress}:{port}.");
-
-
+            rabbitMqLogger.LogInfo($"Server started in {ipAddress}:{port}. Waiting for connections...");
+            
             while (true)
             {
                 tcpClient = await tcpListener.AcceptTcpClientAsync();
@@ -60,6 +67,7 @@ public class Server
                 Console.WriteLine(
                     $"Client {clientRemoteEndpoint.Address} connected on port {clientRemoteEndpoint.Port}");
                 Logger.Info($"Client with {clientRemoteEndpoint.Address} ip connected to server");
+                rabbitMqLogger.LogInfo($"Client with {clientRemoteEndpoint.Address} ip connected to server");
                 var clientHandler = new ClientHandler(tcpClient);
                 Task.Run(async () => await clientHandler.Start());
             }
@@ -67,6 +75,7 @@ public class Server
         catch (Exception e)
         {
             Logger.Error("Exception: {0}", e);
+            rabbitMqLogger.LogError($"Exception: {e.Message}");
             if (_connectedClients.ContainsKey(tcpClient))
             {
                 var user = UserRepository.Instance.QueryByUsername(_connectedClients[tcpClient]);
@@ -78,12 +87,16 @@ public class Server
             }
 
             Console.WriteLine("Client disconnected");
+            rabbitMqLogger.LogInfo("Client disconnected");
+            rabbitMqLogger.Dispose();
         }
         finally
         {
             tcpClient.GetStream().Close();
             tcpClient.Close();
             Logger.Info("TcpClient closed");
+            rabbitMqLogger.LogInfo("TcpClient closed");
+            rabbitMqLogger.Dispose();
         }
     }
 
@@ -145,6 +158,7 @@ public class Server
                             _currentMenu = MenuOptions.ListItems(MenuOptions.MenuItems);
                             ResetUserOptions(_tcpClient);
                             
+                            rabbitMqLogger.LogFileInfo("File transferred correctly");
                             protocolProcessor.Send(
                                 $"{response.Header}" +
                                 $"{response.Operation}" +
@@ -168,8 +182,11 @@ public class Server
                     }
                     
                     clientConnected = false;
-                    Logger.Error("Exception:", e);
+                    Logger.Error("Exception: {}", e);
+                    rabbitMqLogger.LogError($"Exception {e.Message}");
                     Console.WriteLine("Client disconnected");
+                    rabbitMqLogger.LogInfo("Client disconnected");
+                    rabbitMqLogger.Dispose();
                 }
             }
         }
