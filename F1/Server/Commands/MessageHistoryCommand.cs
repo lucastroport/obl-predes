@@ -2,16 +2,24 @@ using F1.Domain.Comparator;
 using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
+using Server.Logging;
 
 namespace Server.Commands;
 
 public class MessageHistoryCommand : ICommand
 {
+    private RabbitMQLogger rabbitMqLogger;
     private IMessageRepository _messageRepository;
     private IUserRepository _userRepository;
     private static readonly object QueryLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername = null)
     {
+        rabbitMqLogger = new RabbitMQLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
+        
         CommandQuery? cmdQuery;
         _messageRepository = MessageRepository.Instance;
         _userRepository = UserRepository.Instance;
@@ -37,6 +45,8 @@ public class MessageHistoryCommand : ICommand
                     {"MENU", $"{menu}"}
                 }
             );
+            rabbitMqLogger.LogInfo($" (USER: {authUsername}) Messages retrieved");
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
             
         }
@@ -47,6 +57,8 @@ public class MessageHistoryCommand : ICommand
                 {"MENU", $"{menu}"},
             }
         );
+        rabbitMqLogger.LogInfo($" (USER: {authUsername}) You don't have any messages");
+        rabbitMqLogger.Dispose();
         return new CommandResult(cmdQuery);
     }
 }

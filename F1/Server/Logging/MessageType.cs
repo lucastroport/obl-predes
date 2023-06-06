@@ -4,5 +4,7 @@ public enum MessageType
 {
     ServerError,
     Info,
-    ClientError
+    ClientError,
+    Parts,
+    Files
 }

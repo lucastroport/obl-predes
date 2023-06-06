@@ -2,16 +2,24 @@ using F1.Constants;
 using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
+using Server.Logging;
 
 namespace Server.Commands;
 
 public class DownloadPartPhotoCommand : ICommand
 {
     private IPartRepository _partRepository;
+    private RabbitMQLogger rabbitMqLogger;
     private static readonly object QueryItemsByNameLock = new();
     private static readonly object QueryPartByIdLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
+        rabbitMqLogger = new RabbitMQLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
+        
         CommandQuery? cmdQuery;
         _partRepository = PartRepository.Instance;
         
@@ -21,6 +29,7 @@ public class DownloadPartPhotoCommand : ICommand
             {
                 {$"{ConstantKeys.SearchPartKey}", "Enter"}
             });
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
         }
         
@@ -46,6 +55,7 @@ public class DownloadPartPhotoCommand : ICommand
                         {$"{ConstantKeys.SelectPartKey}", $"{parts}"}
                     }
                 );
+                rabbitMqLogger.Dispose();
                 return new CommandResult(cmdQuery);
             }
 
@@ -56,6 +66,8 @@ public class DownloadPartPhotoCommand : ICommand
                     {"MENU", $"{menu}"}
                 }
             );
+            rabbitMqLogger.LogClientError($" (USER: {authUsername}) There are no parts to search, please add a part first");
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
         }
 
@@ -74,9 +86,12 @@ public class DownloadPartPhotoCommand : ICommand
                     {"MENU", $"{menu}"}
                 }
             );
+            rabbitMqLogger.LogPartInfo($" (USER: {authUsername}) downloading file: {part.PhotoUrl} associated with part: {part}");
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
         }
-        
+        rabbitMqLogger.LogClientError($" (USER: {authUsername}) The part with name {searchName} doesn't exist or does not have a picture");
+        rabbitMqLogger.Dispose();
         return new CommandResult(new CommandQuery(
             new Dictionary<string, string>
             {

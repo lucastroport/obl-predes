@@ -2,15 +2,23 @@ using F1.Constants;
 using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
+using Server.Logging;
 
 namespace Server.Commands;
 
 public class AddPartCommand : ICommand
 {
     private IPartRepository _partRepository;
+    private RabbitMQLogger rabbitMqLogger;
     private static readonly object PartAddLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
+        rabbitMqLogger = new RabbitMQLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
+        
         CommandQuery? cmdQuery;
         if (query == null)
         {
@@ -20,7 +28,7 @@ public class AddPartCommand : ICommand
                 {ConstantKeys.PartSupplierKey, "Enter"},
                 {ConstantKeys.PartBrandKey, "Enter"}
             });
-            
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
         }
         
@@ -31,7 +39,9 @@ public class AddPartCommand : ICommand
 
         lock (PartAddLock)
         {
-            _partRepository.AddPart(new Part(name, supplier, brand));   
+            var part = new Part(name, supplier, brand);
+            _partRepository.AddPart(part);
+            rabbitMqLogger.LogPartInfo($" (USER: {authUsername}) Part Added : {part}");
         }
 
         cmdQuery = new CommandQuery(
@@ -41,7 +51,7 @@ public class AddPartCommand : ICommand
                 {"MENU", $"{menu}"}
             }
         );
-        
+        rabbitMqLogger.Dispose();
         return new CommandResult(cmdQuery); 
     }
 }

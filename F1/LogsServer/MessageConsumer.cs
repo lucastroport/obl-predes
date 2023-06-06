@@ -40,7 +40,10 @@ public class MessageConsumer
             {
                 { "queue.serverError", MessageType.ServerError },
                 { "queue.info", MessageType.Info },
-                { "queue.clientError", MessageType.ClientError }
+                { "queue.clientError", MessageType.ClientError },
+                { "queue.Parts", MessageType.Parts },
+                { "queue.Files", MessageType.Files },
+                
             };
             foreach (var queueBinding in queueBindings)
             {
@@ -78,12 +81,16 @@ public class MessageConsumer
     {
         switch (routingKey)
         {
-            case "queue.serverError":
+            case "ServerError":
                 return MessageType.ServerError;
-            case "queue.info":
+            case "Info":
                 return MessageType.Info;
-            case "queue.clientError":
+            case "ClientError":
                 return MessageType.ClientError;
+            case "Parts":
+                return MessageType.Parts;
+            case "Files":
+                return MessageType.Files;
             default:
                 return MessageType.Info; // Default category
         }

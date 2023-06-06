@@ -2,15 +2,23 @@ using F1.Constants;
 using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
+using Server.Logging;
 
 namespace Server.Commands;
 
 public class LinkFileToPartCommand : ICommand
 {
+    private RabbitMQLogger rabbitMqLogger;
     private static readonly object QueryLock = new(); 
     private IPartRepository _partRepository;
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
+        rabbitMqLogger = new RabbitMQLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
+        
         CommandQuery? cmdQuery;
         _partRepository = PartRepository.Instance;
         
@@ -29,6 +37,8 @@ public class LinkFileToPartCommand : ICommand
                     {"MENU", $"{menu}"}
                 }
             );
+            rabbitMqLogger.LogClientError($" (USER: {authUsername}) There are no parts to link picture, please add a part first.");
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
         }
         
@@ -39,12 +49,15 @@ public class LinkFileToPartCommand : ICommand
                 {$"{ConstantKeys.SelectPartKey}", $"\n{parts.Aggregate("", (menuString, item) => menuString + item + "\n")}"},
                 {ConstantKeys.EnterFilePathKey, "Enter"}
             });
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
         }
         
         query.Fields.TryGetValue(ConstantKeys.EnterFilePathKey, out var path);
         query.Fields.TryGetValue(ConstantKeys.SelectPartKey, out var partId);
-
+        
+        rabbitMqLogger.LogClientError($" (USER: {authUsername}) Uploading file: {path} associated with part id: {partId}");
+        rabbitMqLogger.Dispose();
         return new CommandResult(
             new CommandQuery(
                 new Dictionary<string, string>

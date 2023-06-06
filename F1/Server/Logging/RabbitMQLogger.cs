@@ -25,12 +25,39 @@ public class RabbitMQLogger : IDisposable
 
         channel.ExchangeDeclare(exchangeName, ExchangeType.Direct, durable: true);
     }
-
-    public void Log(string message, MessageType type = MessageType.Info)
+    
+    public void LogInfo(string message)
     {
-        var body = Encoding.UTF8.GetBytes(message);
+        LogMessage(message, MessageType.Info);
+    }
+
+    public void LogPartInfo(string message)
+    {
+        LogMessage(message, MessageType.Parts);
+    }
+    
+    public void LogError(string message)
+    {
+        LogMessage(message, MessageType.ServerError);
+    }
+    
+    public void LogFileInfo(string message)
+    {
+        LogMessage(message, MessageType.Files);
+    }
+    
+    public void LogClientError(string message)
+    {
+        LogMessage(message, MessageType.ClientError);
+    }
+
+    private void LogMessage(string message, MessageType type)
+    {
+        var logMessage = $"{DateTime.Now:MM-dd-yyyy HH:mm} - {message}";
+        var body = Encoding.UTF8.GetBytes(logMessage);
         channel.BasicPublish(exchange: exchangeName, routingKey: type.ToString(), basicProperties: null, body: body);
     }
+
 
     public void Dispose()
     {

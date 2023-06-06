@@ -2,11 +2,13 @@ using F1.Constants;
 using F1.Domain.Model;
 using F1.Domain.Repository;
 using F1.Presentation.Views.Menu;
+using Server.Logging;
 
 namespace Server.Commands;
 
 public class SendMessageCommand : ICommand
 {
+    private RabbitMQLogger rabbitMqLogger;
     private IMessageRepository _messageRepository;
     private IUserRepository _userRepository;
     private static readonly object QueryByUsernameLock = new();
@@ -15,6 +17,12 @@ public class SendMessageCommand : ICommand
     private static readonly object AddMessageLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
+        rabbitMqLogger = new RabbitMQLogger(
+            LoggingConfigValues.QueueHost, 
+            LoggingConfigValues.QueueUsername,
+            LoggingConfigValues.QueuePassword,
+            LoggingConfigValues.ExchangeName);
+        
         CommandQuery? cmdQuery;
         _userRepository = UserRepository.Instance;
         _messageRepository = MessageRepository.Instance;
@@ -42,6 +50,7 @@ public class SendMessageCommand : ICommand
                         {"MENU", $"{menu}"}
                     }
                 );
+                rabbitMqLogger.LogClientError($" (USER: {authUsername}) Messaging is only between mechanics");
             }
             else
             {
@@ -54,6 +63,7 @@ public class SendMessageCommand : ICommand
                             {"MENU", $"{menu}"}
                         }
                     );
+                    rabbitMqLogger.LogInfo($" (USER: {authUsername}) There are no users to send a message to");
                 }
                 else
                 {
@@ -62,9 +72,10 @@ public class SendMessageCommand : ICommand
                         {ConstantKeys.SelectUserKey, $"{users.Aggregate("", (menuString, item) => menuString + item + "\n")}"},
                         {ConstantKeys.SendMessageKey, "Enter"}
                 
-                    }); 
+                    });
                 }   
             }
+            rabbitMqLogger.Dispose();
             return new CommandResult(cmdQuery);
         }
         
@@ -84,7 +95,7 @@ public class SendMessageCommand : ICommand
                 var messageToAdd = new Message(message, authenticatedUser.Id, userId );
                 _messageRepository.AddMessage(messageToAdd);
             }
-
+            rabbitMqLogger.LogInfo($" (USER: {authUsername}) Message sent to user with id {userId}");
             cmdQuery = new CommandQuery(
                 new Dictionary<string, string>
                 {
@@ -95,6 +106,7 @@ public class SendMessageCommand : ICommand
         }
         else
         {
+            rabbitMqLogger.LogClientError($" (USER: {authUsername}) User entered not valid.");
             cmdQuery = new CommandQuery(
                 new Dictionary<string, string>
                 {
@@ -103,7 +115,7 @@ public class SendMessageCommand : ICommand
                 }
             );
         }
-        
+        rabbitMqLogger.Dispose();
         return new CommandResult(cmdQuery);
     }
 }
