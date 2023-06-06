@@ -16,7 +16,7 @@ public class LogMessagesController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetLogMessages([FromQuery] string categories, [FromQuery] string? search = null)
+    public IActionResult GetLogMessages([FromQuery] string? categories = null, [FromQuery] string? search = null)
     {
         var logMessages = _logsRepository.GetLogs();
 
@@ -24,15 +24,6 @@ public class LogMessagesController : ControllerBase
         {
             var categoryList = categories.Split(',');
 
-            if (categoryList.Contains("All"))
-            {
-                if (!string.IsNullOrEmpty(search))
-                {
-                    logMessages = logMessages.Where(m => m.Message.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
-                }
-
-                return Ok(logMessages.Select(lg => $"{lg.Category.ToString()}: {lg.Message}"));
-            }
             logMessages = logMessages.Where(m => categoryList.Contains(m.Category.ToString())).ToList();
         }
 
@@ -40,8 +31,10 @@ public class LogMessagesController : ControllerBase
         {
             logMessages = logMessages.Where(m => m.Message.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
         }
+
         return Ok(logMessages.Select(lg => $"{lg.Category.ToString()}: {lg.Message}"));
     }
+
 
 
 }
