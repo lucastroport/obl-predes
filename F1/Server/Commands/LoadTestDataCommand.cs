@@ -7,11 +7,11 @@ namespace Server.Commands;
 
 public class LoadTestDataCommand : ICommand
 {
-    private RabbitMQLogger rabbitMqLogger;
+    private RabbitMqLogger rabbitMqLogger;
     private static readonly object QueryByUsernameLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername = null)
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,

@@ -10,12 +10,12 @@ namespace Server.Commands;
 public class AddUserCommand : ICommand
 {
     private IUserRepository _userRepository;
-    private RabbitMQLogger rabbitMqLogger;
+    private RabbitMqLogger rabbitMqLogger;
     private static readonly object UserAddLock = new();
     private static readonly object UserQueryLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,

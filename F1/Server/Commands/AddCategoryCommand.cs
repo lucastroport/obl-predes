@@ -9,12 +9,12 @@ namespace Server.Commands;
 public class AddCategoryCommand : ICommand
 {
     private ICategoryRepository _categoryRepository;
-    private RabbitMQLogger rabbitMqLogger;
+    private RabbitMqLogger rabbitMqLogger;
     private static readonly object CategoryAddLock = new();
     private static readonly object CategoryQueryLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,

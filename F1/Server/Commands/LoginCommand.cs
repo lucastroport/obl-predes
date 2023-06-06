@@ -9,13 +9,13 @@ namespace Server.Commands;
 
 public class LoginCommand : ICommand
 {
-    private RabbitMQLogger rabbitMqLogger;
+    private RabbitMqLogger rabbitMqLogger;
     private IUserRepository _userRepository;
     private static readonly object QueryByUsernameLock = new();
     private static readonly object AuthAddUsernameLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,
@@ -55,7 +55,7 @@ public class LoginCommand : ICommand
                     foundUser.IsLoggedIn = true;
                     resultMessage = "Login successful";
                     menu.TriggerLoggedInMenu();
-                    rabbitMqLogger.LogInfo($" (USER: {authUsername}) Login successful");
+                    rabbitMqLogger.LogInfo($" (USER: {foundUser.Username}) Login successful");
                 }
                 else
                 {

@@ -9,11 +9,11 @@ namespace Server.Commands;
 public class AddPartCommand : ICommand
 {
     private IPartRepository _partRepository;
-    private RabbitMQLogger rabbitMqLogger;
+    private RabbitMqLogger rabbitMqLogger;
     private static readonly object PartAddLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,

@@ -28,7 +28,7 @@ public class Server
     private static readonly object AuthAddLock = new();
     private static readonly object ReadFieldsLock = new();
     private static readonly object SendFileLock = new();
-    private static RabbitMQLogger rabbitMqLogger;
+    private static RabbitMqLogger rabbitMqLogger;
 
     static Server()
     {
@@ -37,7 +37,7 @@ public class Server
 
     static async Task Main()
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,

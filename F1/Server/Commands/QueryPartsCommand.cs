@@ -8,13 +8,13 @@ namespace Server.Commands;
 
 public class QueryPartsCommand : ICommand
 {
-    private RabbitMQLogger rabbitMqLogger;
+    private RabbitMqLogger rabbitMqLogger;
     private IPartRepository _partRepository;
     private static readonly object QueryContainsNameLock = new();
     private static readonly object QueryItemsByNameLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,

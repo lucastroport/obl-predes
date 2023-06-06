@@ -9,12 +9,12 @@ namespace Server.Commands;
 public class DownloadPartPhotoCommand : ICommand
 {
     private IPartRepository _partRepository;
-    private RabbitMQLogger rabbitMqLogger;
+    private RabbitMqLogger rabbitMqLogger;
     private static readonly object QueryItemsByNameLock = new();
     private static readonly object QueryPartByIdLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,

@@ -8,7 +8,7 @@ namespace Server.Commands;
 
 public class LinkCategoryCommand : ICommand
 {
-    private RabbitMQLogger rabbitMqLogger;
+    private RabbitMqLogger rabbitMqLogger;
     private IPartRepository _partRepository;
     private ICategoryRepository _categoryRepository;
     private static readonly object PartQueryByIdLock = new();
@@ -17,7 +17,7 @@ public class LinkCategoryCommand : ICommand
     private static readonly object QueryLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,

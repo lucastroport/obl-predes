@@ -8,7 +8,7 @@ namespace Server.Commands;
 
 public class SendMessageCommand : ICommand
 {
-    private RabbitMQLogger rabbitMqLogger;
+    private RabbitMqLogger rabbitMqLogger;
     private IMessageRepository _messageRepository;
     private IUserRepository _userRepository;
     private static readonly object QueryByUsernameLock = new();
@@ -17,7 +17,7 @@ public class SendMessageCommand : ICommand
     private static readonly object AddMessageLock = new();
     public CommandResult Execute(CommandQuery? query, Menu menu, string? authUsername)
     {
-        rabbitMqLogger = new RabbitMQLogger(
+        rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 
             LoggingConfigValues.QueueUsername,
             LoggingConfigValues.QueuePassword,

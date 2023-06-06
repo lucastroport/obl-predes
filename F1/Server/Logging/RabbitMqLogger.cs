@@ -4,13 +4,13 @@ using RabbitMQ.Client;
 using System;
 using System.Text;
 
-public class RabbitMQLogger : IDisposable
+public class RabbitMqLogger : IDisposable
 {
-    private readonly IConnection connection;
-    private readonly IModel channel;
-    private readonly string exchangeName;
+    private readonly IConnection _connection;
+    private readonly IModel _channel;
+    private readonly string _exchangeName;
 
-    public RabbitMQLogger(string host, string username, string password, string exchangeName)
+    public RabbitMqLogger(string host, string username, string password, string exchangeName)
     {
         var factory = new ConnectionFactory
         {
@@ -19,11 +19,11 @@ public class RabbitMQLogger : IDisposable
             Password = password
         };
 
-        connection = factory.CreateConnection();
-        channel = connection.CreateModel();
-        this.exchangeName = exchangeName;
+        _connection = factory.CreateConnection();
+        _channel = _connection.CreateModel();
+        _exchangeName = exchangeName;
 
-        channel.ExchangeDeclare(exchangeName, ExchangeType.Direct, durable: true);
+        _channel.ExchangeDeclare(exchangeName, ExchangeType.Direct, durable: true);
     }
     
     public void LogInfo(string message)
@@ -55,13 +55,13 @@ public class RabbitMQLogger : IDisposable
     {
         var logMessage = $"{DateTime.Now:MM-dd-yyyy HH:mm} - {message}";
         var body = Encoding.UTF8.GetBytes(logMessage);
-        channel.BasicPublish(exchange: exchangeName, routingKey: type.ToString(), basicProperties: null, body: body);
+        _channel.BasicPublish(exchange: _exchangeName, routingKey: type.ToString(), basicProperties: null, body: body);
     }
 
 
     public void Dispose()
     {
-        channel?.Dispose();
-        connection?.Dispose();
+        _channel.Dispose();
+        _connection.Dispose();
     }
 }
