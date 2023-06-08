@@ -30,12 +30,12 @@ public class Server
     private static readonly object SendFileLock = new();
     private static RabbitMqLogger rabbitMqLogger;
 
-    static Server()
+    public Server()
     {
         XmlConfigurator.Configure();
     }
 
-    static async Task Main()
+    public async Task Start()
     {
         rabbitMqLogger = new RabbitMqLogger(
             LoggingConfigValues.QueueHost, 

@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option csharp_namespace = "Server";
+
+package parts;
+
+service Parts {
+  rpc AddPart(AddPartRequest) returns (AddPartResponse) {}
+  rpc ModifyPart(ModifyPartRequest) returns (ModifyPartResponse) {}
+  rpc DeletePart(DeletePartRequest) returns (DeletePartResponse) {}
+}
+
+message AddPartRequest {
+  string name = 1;
+  string supplier = 2;
+  string brand = 3;
+}
+
+message AddPartResponse {
+  string addPartResult = 1;
+}
+
+message ModifyPartRequest {
+  int32 id = 1;
+  string name = 2;
+  string supplier = 3;
+  string brand = 4;
+}
+
+message ModifyPartResponse {
+  string modifyPartResult = 1;
+}
+
+message DeletePartRequest {
+  int32 id = 1;
+}
+
+message DeletePartResponse {
+  string deletePartResult = 1;
+}

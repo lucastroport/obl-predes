@@ -1,5 +1,6 @@
-using LogsServer;
 using LogsServer.Repository;
+
+namespace LogsServer;
 
 public class Program
 {
