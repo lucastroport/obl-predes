@@ -8,6 +8,7 @@ service Parts {
   rpc AddPart(AddPartRequest) returns (AddPartResponse) {}
   rpc ModifyPart(ModifyPartRequest) returns (ModifyPartResponse) {}
   rpc DeletePart(DeletePartRequest) returns (DeletePartResponse) {}
+  rpc DeletePartFile(DeletePartFileRequest) returns (DeletePartFileResponse) {}
 }
 
 message AddPartRequest {
@@ -27,6 +28,10 @@ message ModifyPartRequest {
   string brand = 4;
 }
 
+message DeletePartFileRequest {
+  int32 partId = 1;
+}
+
 message ModifyPartResponse {
   string modifyPartResult = 1;
 }
@@ -37,4 +42,8 @@ message DeletePartRequest {
 
 message DeletePartResponse {
   string deletePartResult = 1;
+}
+
+message DeletePartFileResponse {
+  string deletePartFileResult = 1;
 }

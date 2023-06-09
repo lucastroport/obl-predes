@@ -44,5 +44,18 @@ public class PartsController : ControllerBase
 
         return Ok(response);
     }
+    
+    [HttpDelete("{id:int}/file")]
+    public async Task<IActionResult> DeletePartFile(int id)
+    {
+        var request = new DeletePartFileRequest
+        {
+            PartId = id
+        };
+
+        var response = await _grpcClient.DeletePartFileAsync(request);
+
+        return Ok(response);
+    }
 
 }

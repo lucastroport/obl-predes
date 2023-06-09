@@ -201,6 +201,7 @@ public class Server
         {
             var menu = new Menu();
             var ack = "";
+            var sendAck = true;
             
             if (IsClientAuthenticated(tcpClient))
             {
@@ -255,7 +256,16 @@ public class Server
                     lock (SendFileLock)
                     {
                         var fileCommonHandler = new FileCommsHandler(tcpClient);
+                        if (response.Query != null)
+                        {
+                            var isMenu = response.Query.Fields.TryGetValue("MENU", out _currentMenu);
+                            if (isMenu)
+                            {
+                                ResetUserOptions(tcpClient);
+                            }
+                        }
                         fileCommonHandler.SendFile(fileUrl, response);
+                        sendAck = false;
                     }
                 }
                 else
@@ -317,7 +327,11 @@ public class Server
                           error.QueryLength +
                           $"{QueryDataSerializer.Serialize(error.Query)}";
             }
-            processor.Send(ack);
+
+            if (sendAck)
+            {
+                processor.Send(ack);   
+            }
         }
 
         private static void ResetUserOptions(TcpClient tcpClient)

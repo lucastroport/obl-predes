@@ -44,4 +44,14 @@ public class PartsService : Parts.PartsBase
         };
         return deletePartResponse;
     }
+
+    public override async Task<DeletePartFileResponse> DeletePartFile(DeletePartFileRequest request, ServerCallContext context)
+    {
+        var result = await _partsManager.DeletePartFile(request.PartId);
+        var deletePartFileResponse = new DeletePartFileResponse()
+        {
+            DeletePartFileResult = result.Message
+        };
+        return deletePartFileResponse;
+    }
 }

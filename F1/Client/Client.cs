@@ -118,8 +118,9 @@ internal class Client
                     {
                         var fileCommonHandler = new FileCommsHandler(tcpClient);
                         response.Query.Fields.TryGetValue(Constants.ConstantKeys.SaveFileKey, out var filePath);
-                        fileCommonHandler.SendFile(filePath, response);   
+                        fileCommonHandler.SendFile(filePath, response);
                     }
+
                 }
                 else
                 {
@@ -127,7 +128,7 @@ internal class Client
                     {
                         var fileCommonHandler = new FileCommsHandler(tcpClient);
                         var writePath = await fileCommonHandler.ReceiveFile(long.Parse(fileSizeRaw), filename);
-                        Console.WriteLine($"File downloaded in {writePath}");  
+                        Console.WriteLine($"File downloaded in {writePath}");
                     }
                     
                     if (isMenu || containsResult)
