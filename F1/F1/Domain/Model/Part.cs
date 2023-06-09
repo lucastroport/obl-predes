@@ -3,9 +3,9 @@ namespace F1.Domain.Model;
 public class Part
 {
     public string Id { get; set; }
-    public string Name { get; }
-    public string? Supplier { get; }
-    public string? Brand { get; }
+    public string Name { get; set; }
+    public string? Supplier { get; set; }
+    public string? Brand { get; set; }
     public string? PhotoUrl { get; set; }
     public List<PartCategory> Categories { get; }
 

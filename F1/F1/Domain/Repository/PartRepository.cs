@@ -34,7 +34,11 @@ namespace F1.Domain.Repository
                 throw new ArgumentException($"Cannot add Part with duplicated id: {p.Id}");
             }
 
-            p.Id = $"{_parts.Count + 1}";
+            int lastAssignedId = _parts.Select(part => int.Parse(part.Id)).DefaultIfEmpty(0).Max();
+            
+            int newId = lastAssignedId + 1;
+            p.Id = newId.ToString();
+
             _parts.Add(p);
         }
 

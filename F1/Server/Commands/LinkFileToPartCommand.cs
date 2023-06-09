@@ -56,7 +56,7 @@ public class LinkFileToPartCommand : ICommand
         query.Fields.TryGetValue(ConstantKeys.EnterFilePathKey, out var path);
         query.Fields.TryGetValue(ConstantKeys.SelectPartKey, out var partId);
         
-        rabbitMqLogger.LogClientError($" (USER: {authUsername}) Uploading file: {path} associated with part id: {partId}");
+        rabbitMqLogger.LogPartInfo($" (USER: {authUsername}) Uploading file: {path} associated with part id: {partId}");
         rabbitMqLogger.Dispose();
         return new CommandResult(
             new CommandQuery(
