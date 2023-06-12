@@ -14,8 +14,23 @@ public class Program
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {
-                webBuilder.UseKestrel();
+                webBuilder.UseKestrel((hostingContext, options) =>
+                {
+                    // Get the port from appsettings.json
+                    int httpPort = hostingContext.Configuration.GetValue<int>("Server:HttpPort");
+                    int httpsPort = hostingContext.Configuration.GetValue<int>("Server:HttpsPort");
+                    options.ListenAnyIP(httpPort);
+                    options.ListenAnyIP(httpsPort, listenOptions =>
+                    {
+                        listenOptions.UseHttps(); // Enable HTTPS
+                    });
+                });
                 webBuilder.UseStartup<Startup>();
+            })
+            .ConfigureAppConfiguration((hostingContext, config) =>
+            {
+                config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                config.AddEnvironmentVariables();
             })
             .Build();
         
